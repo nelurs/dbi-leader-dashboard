@@ -18,7 +18,7 @@ Leaders do not re-drag the bookmark when `scan.js` changes. The next click loads
 
 A bookmark click must not start the scan. It opens the dashboard tab and leaves it idle. The leader picks a language and favorites, then clicks **Scan assignments**.
 
-While the scan runs, the assignments tab must stay in the foreground. Opening the dashboard tab must not leave the scan throttled in a background tab. `focusLeader()` returns focus to the signed-in tab after the dashboard opens and again when Scan is clicked. Do not call `dash.focus()` at scan start.
+The leader may watch the dashboard tab while the scan runs. Chrome then treats the assignments tab as a background tab and stretches every `setTimeout` and `setInterval` to about 1 second. The walk must not depend on those timers. `focusLeader()` still tries to return focus to the signed-in tab, and the scan must stay fast even when that focus does not stick. Do not call `dash.focus()` at scan start.
 
 ## Dashboard tab
 
@@ -52,17 +52,17 @@ After changing this folder, commit and push to `origin main` so https://nelurs.g
 
 ## Speed secret
 
-The local extension `DBI_Leader_Dashboard_0.3.41` (`scanner.js` `expand`) uses one click, waits until the lesson row is ready, then `delay(350)`. It only retries when that wait fails. A retry is not the normal path.
+Symptom: the scan was fast as a same-tab bookmark (`9caa011`) and in the extension, then became slow only after the dashboard opened as a second tab. Status could show `Retrying Name (2/3)` while the hero still said to run a scan.
 
-This bookmark scan was hitting `Retrying Name (2/3)` on ordinary students. `expanded()` required `getClientRects().length`. In a background tab Chrome often reports no layout, so every row looked closed, each student waited 7 seconds, then the scan collapsed and tried again up to 3 times. That is the slowness. The extension stays fast because its scan window is the one doing layout, so the first open succeeds and the retry loop never runs.
+Cause: the leader looks at the dashboard, so the assignments tab is in the background. Chrome clamps `setTimeout` and `setInterval` there to about 1000ms and reports no layout (`getClientRects()` is empty). The extension’s `delay(350)` after each student, `stableTable`’s 600ms settle, `waitFor`’s 400ms poll, and the collapse wait were small on a foreground tab. In the background each one becomes a full second, and hundreds of students times several timers is the slowdown. A failed expand used to add a 7-second retry, up to 3 times.
 
-`scan.js` must treat a row as open when it contains `div.lesson-item__wrapper` (or a spinner), not only when it has a painted rectangle. `expand` must click once and wait once. Do not loop “Retrying (2/3)” and do not add a second `delay(250)`. Keep the extension’s single `delay(350)` after the row is ready, and `stableTable`’s 600ms settle when changing module or page. Do not rebuild the whole dashboard inside the student loop. `progress()` may write the status line and the hero title only.
+What the extension does: `scanner.js` clicks a student, polls until the lesson row is ready, then sleeps 350ms. That sleep is safe only because the extension’s scan window is the foreground scan context. It is not safe once this dashboard tab backgrounds the assignments page.
 
-Clicking Scan runs in the dashboard tab, so `window.focus()` from the assignments page is ignored and the scan stays throttled. The Scan button must call `opener.focus()` from the dashboard window itself (`slot.dash.Function`) before the walk starts.
+What `scan.js` must do: never wait with `setTimeout` between students. Drive “row is open”, “content is ready”, and “page changed” from `MutationObserver` (observers still run in a background tab). One click per student. No 3-try retry loop and no collapse wait. Treat the next row as open when it is in the DOM and is not another student row, not when `getClientRects()` is non-zero. Do not keep `delay(350)` or a 600ms settle on the success path. A single deadline `setTimeout` may bound a failed wait. An empty module may still confirm for 5 seconds so a loading flash is not skipped; that timer is not between students. `progress()` writes the status line and the hero title on the open dashboard window. Do not rebuild the dashboard DOM on every student. Do not translate lessons while `slot.running` is true.
 
 ## If this breaks again
 
-- **Status says “Retrying … (2/3)” or the scan is slow until the assignments tab is clicked.** `expand` grew a retry loop again, or `expanded()` went back to requiring `getClientRects()` only. A background tab has no layout boxes. Also confirm the Scan click focuses `opener` from the dashboard realm. Do not add waits the extension’s success path does not have.
+- **The scan is slow while the dashboard tab is in front, or status says “Retrying … (2/3)”.** A `setTimeout` or `setInterval` is back on the student walk (`delay(350)`, a 600ms settle, a 400ms poll, or a collapse wait). Background Chrome stretches each of those to about 1 second. Readiness belongs on `MutationObserver`. `expanded()` must not require `getClientRects()`. One click per student, no retry loop.
 - **Bookmark click starts scanning immediately.** Something calls `scan()` at the bottom of `scan.js` again. Only the Scan assignments button may call `scan()`.
 - **“Translating the dashboard…” stays up while the button says English.** `setLanguage` set the status before Google Translate returned, and the request never finished. English must return before any `fetch`. `withTimeout(..., 12000)` must still reject and restore the previous language and status.
 - **Lesson titles translate during the walk and the scan slows down.** `lessonLabel` queued Google Translate while `slot.running` was true, or `publishLive` called `render()` on every student. Do not render the full dashboard inside the student loop.

@@ -489,33 +489,27 @@
     timeout = timeout || 15000;
     return new Promise(function (resolve, reject) {
       var done = false;
-      var started = Date.now();
       var observer;
-      var backup;
+      var deadline;
       function finish(error, value) {
         if (done) return;
         done = true;
         if (observer) observer.disconnect();
-        clearInterval(backup);
+        clearTimeout(deadline);
         error ? reject(error) : resolve(value);
       }
       function inspect() {
         try {
           check();
-          if (Date.now() - started >= timeout) { finish(Error('Timed out waiting for DBI content.')); return; }
           var value = fn();
           if (value) finish(null, value);
         } catch (error) { finish(error); }
       }
       observer = new MutationObserver(inspect);
       observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
-      backup = setInterval(inspect, 400);
+      deadline = setTimeout(function () { finish(Error('Timed out waiting for DBI content.')); }, timeout);
       inspect();
     });
-  }
-  function delay(ms) {
-    var start = Date.now();
-    return waitFor(function () { return Date.now() - start >= ms; }, ms + 8000);
   }
   function loading(root) { return !!(root && root.querySelector('[aria-busy="true"],.spinner-border,.spinner-grow,[role="progressbar"]')); }
   function next() {
@@ -527,7 +521,8 @@
     return structural && structural.getAttribute('aria-disabled') !== 'true' ? structural : null;
   }
   function page() { return Number(text(document.querySelector('ul.react-paginate li.active a'))) || 1; }
-  function signature() { return activeModule() + '#' + page() + '#' + rows().map(function (row) { return key(info(row)); }).join('|'); }
+  function rowKeys() { return rows().map(function (row) { return key(info(row)); }).join('|'); }
+  function signature() { return activeModule() + '#' + page() + '#' + rowKeys(); }
   function emptyModule() {
     var table = document.querySelector('table.table');
     var body = table ? [].filter.call(table.children, function (el) { return el.tagName === 'TBODY'; })[0] : null;
@@ -538,20 +533,62 @@
     var searchClear = !search || search.value.trim() === '';
     return !!(body && body.children.length === 0 && searchClear && page() === 1 && nextLi && nextLi.classList.contains('disabled') && prevLi && prevLi.classList.contains('disabled') && !loading(document));
   }
-  function stableTable(expected) {
-    var last = null;
-    var since = Date.now();
-    return waitFor(function () {
-      if (activeModule() !== expected) { last = null; since = Date.now(); return false; }
-      var table = document.querySelector('table.table');
-      if (!table || loading(document)) { last = null; since = Date.now(); return false; }
-      var fingerprint = signature();
-      if (fingerprint !== last) { last = fingerprint; since = Date.now(); }
-      var elapsed = Date.now() - since;
-      if (rows().length && elapsed >= 600) return 'rows';
-      if (emptyModule() && elapsed >= 5000) return 'empty';
-      return false;
-    }, 25000);
+  function stableTable(expected, previousKeys) {
+    var sawLoading = false;
+    var bodyTouched = false;
+    return new Promise(function (resolve, reject) {
+      var done = false;
+      var observer;
+      var deadline;
+      var emptyTimer;
+      function finish(error, value) {
+        if (done) return;
+        done = true;
+        if (observer) observer.disconnect();
+        clearTimeout(deadline);
+        clearTimeout(emptyTimer);
+        error ? reject(error) : resolve(value);
+      }
+      function bodyChanged(mutations) {
+        if (!mutations) return;
+        for (var i = 0; i < mutations.length; i++) {
+          var target = mutations[i].target;
+          if (!target || !target.closest) continue;
+          if (target.tagName === 'TBODY' || target.closest('table.table tbody')) bodyTouched = true;
+        }
+      }
+      function inspect(mutations) {
+        try {
+          check();
+          bodyChanged(mutations);
+          if (activeModule() !== expected) return;
+          var table = document.querySelector('table.table');
+          if (!table) return;
+          if (loading(document) || loading(table)) {
+            sawLoading = true;
+            clearTimeout(emptyTimer);
+            emptyTimer = null;
+            return;
+          }
+          var keys = rowKeys();
+          var fresh = previousKeys == null || keys !== previousKeys || sawLoading || bodyTouched;
+          if (rows().length && fresh) { finish(null, 'rows'); return; }
+          if (emptyModule() && fresh && !emptyTimer) {
+            emptyTimer = setTimeout(function () {
+              try {
+                check();
+                if (activeModule() === expected && emptyModule() && !loading(document)) finish(null, 'empty');
+                else emptyTimer = null;
+              } catch (error) { finish(error); }
+            }, 5000);
+          }
+        } catch (error) { finish(error); }
+      }
+      observer = new MutationObserver(inspect);
+      observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
+      deadline = setTimeout(function () { finish(Error('Timed out waiting for DBI content.')); }, 25000);
+      inspect(null);
+    });
   }
   function firstControl() {
     var byLabel = [].filter.call(document.querySelectorAll('ul.react-paginate a[aria-label]'), function (a) { return /^Page 1(?:\s|$)/.test(a.getAttribute('aria-label') || ''); })[0];
@@ -559,23 +596,16 @@
     return [].filter.call(document.querySelectorAll('ul.react-paginate li a'), function (a) { return text(a) === '1'; })[0] || null;
   }
   function move(getControl, changed, label, module) {
-    var attempt = 1;
-    function once() {
-      return Promise.resolve().then(function () {
-        check();
-        progress(label + (attempt > 1 ? ' — retry ' + attempt : ''));
-        var control = getControl();
-        if (!control) throw Error(label + ': control unavailable.');
-        control.scrollIntoView({ block: 'center' });
-        control.click();
-        return waitFor(changed, 10000).then(function () { return stableTable(module); });
-      }).catch(function (error) {
-        if (slot.cancelled || attempt === 2) throw error;
-        attempt += 1;
-        return once();
-      });
-    }
-    return once();
+    var previousKeys = rowKeys();
+    return Promise.resolve().then(function () {
+      check();
+      progress(label);
+      var control = getControl();
+      if (!control) throw Error(label + ': control unavailable.');
+      control.scrollIntoView({ block: 'center' });
+      control.click();
+      return waitFor(changed, 10000).then(function () { return stableTable(module, previousKeys); });
+    });
   }
   function firstPage(module) {
     if (page() === 1) return stableTable(module);
@@ -594,9 +624,7 @@
     var row = find(s);
     var nextRow = row.nextElementSibling;
     if (!nextRow || rowButton(nextRow)) return null;
-    if (nextRow.getClientRects().length) return nextRow;
-    if (nextRow.querySelector('div.lesson-item__wrapper, [aria-busy="true"], .spinner-border, .spinner-grow')) return nextRow;
-    return null;
+    return nextRow;
   }
   function explicitEmpty(el) {
     var body = text(el);
@@ -618,21 +646,11 @@
       button.scrollIntoView({ block: 'center' });
       button.click();
     }
-    return waitFor(function () { return readyStudent(s); }, 7000).then(function () { return delay(350); }).then(function () {
+    return waitFor(function () { return readyStudent(s); }, 7000).then(function () {
       var el = readyStudent(s);
       if (el) return el;
       throw Error('Student content did not stay open.');
     });
-  }
-  function collapse(s) {
-    try {
-      if (expanded(s)) {
-        var button = rowButton(find(s));
-        if (button) button.click();
-        return waitFor(function () { return !expanded(s); }, 2500);
-      }
-    } catch (error) { check(); }
-    return Promise.resolve();
   }
   function parse(el) {
     return [].map.call(el.querySelectorAll('div.lesson-item__wrapper'), function (wrapper) {
@@ -744,7 +762,7 @@
             job = readStudent(module, s, logicalPage, out, dedup).catch(function (error) {
               check();
               out.warnings.push(module + ' / ' + s.student + ': ' + error.message);
-            }).then(function () { return collapse(s); });
+            });
           }
           return job.then(function () {
             progress(module + ' • page ' + logicalPage + ' • checked ' + (at + 1) + '/' + students.length);
