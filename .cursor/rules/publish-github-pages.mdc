@@ -1,8 +1,12 @@
 ---
-description: Publish DBI Leader Dashboard edits to GitHub Pages
+description: Do not auto-publish DBI Leader Dashboard edits
 alwaysApply: true
 ---
 
-After changing this DBI Leader Dashboard repo, commit and push to the branch GitHub Pages publishes (origin main) so https://nelurs.github.io/dbi-leader-dashboard/ updates. Do not leave dashboard edits only on disk.
+Do NOT commit or push dashboard edits unless the user explicitly asks to publish a test or to push the update.
 
-Do this only when the user asked for the change, or when they asked for the public page to stay current. Never force-push. Never update git config. Never commit secrets.
+Future experiments edit `scan-test.js` only. Never replace `scan.js` except by the promote workflow (`.github/workflows/promote-scan.yml`), which copies the tested scan over the good one after the leader confirms Push update.
+
+The good bookmark must keep loading `scan.js`. Publishing `scan-test.js` must not change `scan.js`.
+
+Never force-push. Never update git config. Never commit secrets.

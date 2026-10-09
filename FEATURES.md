@@ -6,13 +6,12 @@ The fast baseline is `Downloads/DBI_Leader_Dashboard_Prototype` (version 0.3.45)
 
 ## Bookmark
 
-The bookmark is a stable `javascript:` loader. On every click it injects:
+There are two bookmarks. Both are stable `javascript:` loaders. On every click they inject a GitHub Pages script plus `?t=` and the current time.
 
-`https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=` plus the current time.
+- **DBI Leader Scan** loads `scan.js`. This is the good bookmark. Leave the one already on the bookmarks bar. It changes only after Push update promotes a tested scan.
+- **DBI Leader Scan test** loads `scan-test.js`. Drag this once. Try changes here. It does not replace `scan.js`.
 
-Leaders do not re-drag the bookmark when `scan.js` changes. The next click loads the latest published scan after GitHub Pages rebuilds (about a minute). Only a change to that loader payload itself would require one new drag. Behavior belongs in `scan.js`, not in the bookmark.
-
-`index.html` builds that loader. `bookmarklet.js` is the same loader written out. Keep them identical.
+`index.html` builds both loaders. `bookmarklet.js` writes the same two loaders. Keep the good loader pointed at `scan.js`.
 
 ## Startup
 
@@ -48,7 +47,13 @@ There are 4 modules: Prayer, Evangelism, Discipleship, Revival. A count like “
 
 ## Publish
 
-After changing this folder, commit and push to `origin main` so https://nelurs.github.io/dbi-leader-dashboard/ updates. Do not leave dashboard edits only on disk. Never force-push. Never update git config. Never commit secrets.
+Do not commit or push dashboard edits unless the leader explicitly asks to publish a test or to push the update. Experiments belong in `scan-test.js` only. Never replace `scan.js` by hand. The good bookmark must keep loading `scan.js`.
+
+**Push update** exists only on the test dashboard, behind `var DBI_SCAN_CHANNEL = 'test'` and `if (DBI_SCAN_CHANNEL === 'test')`. Production `scan.js` sets that flag to `'good'`, so it does not show the TEST banner or the button. Clicking Push update asks “Replace the good bookmark with this tested scan?” and then opens the GitHub Actions page for `promote-scan.yml`. That workflow runs only when someone starts it (`workflow_dispatch`). It copies `scan-test.js` over `scan.js` after changing the channel flag to `'good'`, commits, and pushes with the default `GITHUB_TOKEN`. No token is stored in the page. Until that workflow runs, editing or publishing `scan-test.js` does not change `scan.js`. The good bookmark picks up the new `scan.js` on the next click after GitHub Pages rebuilds (about a minute).
+
+Restore the fast scan from `backups/2026-10-09-fast-scan/` if a later edit breaks speed. That folder has the approved `scan.js`, `index.html`, `bookmarklet.js`, `FEATURES.md`, and a README with the clock notes below.
+
+Never force-push. Never update git config. Never commit secrets.
 
 ## Speed secret
 
@@ -69,4 +74,5 @@ What `scan.js` must do: the same walk, with the dashboard tab playing the offscr
 - **By student and By group are empty after a scan that found people.** `rosterPeople` or `leaderBrief` uses `[].slice.call(map.values())`. Use `Array.from`.
 - **Hero says the scan is incomplete and then quotes the unsubmitted count.** `out.complete = out.warnings.length === 0` is back, or the hero prefixes `partial` onto `noneWaitingText`. Incomplete belongs only in `scanStopped`. Unsubmitted work uses `noneWaitingText` alone.
 - **“108 modules” (or any large module count).** The side label `sideCaught` was applied to roster rows. Those rows are student checks. There are 4 modules.
-- **A published scan.js change does not show up.** The bookmark is fine. Wait for GitHub Pages, then click the same bookmark. Replace the bookmark only if the `javascript:` loader in `index.html` changed.
+- **A published scan.js change does not show up.** The good bookmark is fine. Wait for GitHub Pages, then click the same bookmark. Replace that bookmark only if its `javascript:` loader in `index.html` changed. A test-scan change shows up on the test bookmark, not on the good one, until Push update is confirmed and the promote workflow runs.
+- **The good bookmark shows TEST or Push update.** `scan.js` was copied from `scan-test.js` without setting `DBI_SCAN_CHANNEL` to `'good'`. The banner and button must stay inside `if (DBI_SCAN_CHANNEL === 'test')`.

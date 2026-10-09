@@ -1,0 +1,44 @@
+name: Promote tested scan
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy the tested scan onto the good bookmark
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const test = fs.readFileSync('scan-test.js', 'utf8');
+          if (!test.includes("var DBI_SCAN_CHANNEL = 'test'")) {
+            console.error('scan-test.js is missing the test channel flag');
+            process.exit(1);
+          }
+          const promoted = test.replace("var DBI_SCAN_CHANNEL = 'test'", "var DBI_SCAN_CHANNEL = 'good'");
+          if (promoted.includes("var DBI_SCAN_CHANNEL = 'test'")) {
+            console.error('promoted scan.js would still be the test channel');
+            process.exit(1);
+          }
+          if (!promoted.includes("if (DBI_SCAN_CHANNEL === 'test')")) {
+            console.error('test UI must stay behind the channel flag');
+            process.exit(1);
+          }
+          fs.writeFileSync('scan.js', promoted);
+          NODE
+
+      - name: Commit the good bookmark
+        run: |
+          git add scan.js
+          if git diff --cached --quiet; then
+            echo "scan.js already matches the tested scan"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Promote the tested scan to the good bookmark."
+          git push

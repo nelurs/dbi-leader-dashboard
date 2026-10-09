@@ -3,6 +3,7 @@
    and does not ask for or store a password. There is no background scan and no Chrome notification. */
 (function () {
   'use strict';
+  var DBI_SCAN_CHANNEL = 'good';
   if (location.hostname !== 'digitalbibleinstitute.com') {
     window.alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');
     return;
@@ -1396,6 +1397,28 @@
   panel.appendChild(style);
   panel.insertAdjacentHTML('beforeend', '<div class="top"><div><h1>DBI Leader Dashboard</h1><p id="dlp-subtitle"></p><p class="lede" id="dlp-lede"></p></div><div class="lang"><div class="langpick"><button type="button" id="dlp-lang" class="ghost" aria-haspopup="dialog" aria-expanded="false" aria-controls="dlp-lang-panel">English</button><div id="dlp-lang-panel" class="langpanel" hidden role="dialog" aria-label="Language"><input id="dlp-lang-search" type="search" autocomplete="off"><div id="dlp-lang-list"></div></div></div><button type="button" id="dlp-scan"></button><button type="button" id="dlp-cancel" class="ghost" disabled></button><button type="button" id="dlp-clear" class="ghost"></button><button type="button" id="dlp-close" class="ghost">Close</button></div></div><p id="dlp-progress" role="status"></p><section class="hero"><div><p class="eyebrow" id="dlp-kicker"></p><p class="hero-count" id="dlp-count"></p><h2 id="dlp-hero-title"></h2><p id="dlp-brief"></p><div id="dlp-next"></div></div><aside id="dlp-side"></aside></section><div id="dlp-cards"></div><details open><summary><span id="dlp-label-modules"></span> <span class="pill" id="dlp-module-count">0</span></summary><div class="body" id="dlp-modules"></div></details><details open><summary><span id="dlp-label-work"></span> <span class="pill" id="dlp-work-count">0</span></summary><div class="body"><p><input id="dlp-search"><select id="dlp-status"></select><select id="dlp-module"></select><select id="dlp-group"></select><button type="button" id="dlp-export" class="ghost"></button></p><p id="dlp-coverage" class="fine"></p><table><thead><tr><th id="dlp-th-student"></th><th id="dlp-th-group"></th><th id="dlp-th-module"></th><th id="dlp-th-assignment"></th><th id="dlp-th-status"></th><th id="dlp-th-action"></th></tr></thead><tbody id="dlp-rows"></tbody></table></div></details><details open><summary><span id="dlp-label-groups"></span> <span class="pill" id="dlp-group-count">0</span></summary><div class="body"><p><select id="dlp-group-pick"></select></p><div id="dlp-group-detail"></div><table><thead><tr><th id="dlp-th-group2"></th><th id="dlp-th-rows"></th><th id="dlp-th-feedback"></th><th id="dlp-th-missing"></th><th id="dlp-th-caught"></th><th id="dlp-th-behind"></th></tr></thead><tbody id="dlp-groups"></tbody></table></div></details><details open><summary><span id="dlp-label-students"></span> <span class="pill" id="dlp-student-count">0</span></summary><div class="body"><p><select id="dlp-student-pick"></select><button type="button" id="dlp-export-student" class="ghost" disabled></button></p><div id="dlp-student-detail"></div><table><thead><tr><th id="dlp-th-student2"></th><th id="dlp-th-group3"></th><th id="dlp-th-feedback2"></th><th id="dlp-th-missing2"></th><th id="dlp-th-total"></th></tr></thead><tbody id="dlp-students"></tbody></table></div></details><details><summary><span id="dlp-label-reminder"></span></summary><div class="body"><p class="fine" id="dlp-reminder-note"></p><p id="dlp-days"><label><input type="checkbox" data-day="0" checked> <span id="dlp-day-0"></span></label> <label><input type="checkbox" data-day="1" checked> <span id="dlp-day-1"></span></label> <label><input type="checkbox" data-day="2" checked> <span id="dlp-day-2"></span></label> <label><input type="checkbox" data-day="3" checked> <span id="dlp-day-3"></span></label> <label><input type="checkbox" data-day="4" checked> <span id="dlp-day-4"></span></label> <label><input type="checkbox" data-day="5" checked> <span id="dlp-day-5"></span></label> <label><input type="checkbox" data-day="6" checked> <span id="dlp-day-6"></span></label></p><p><span id="dlp-time-label"></span> <input id="dlp-hour" type="number" min="0" max="23" value="10"> <span id="dlp-hour-label"></span> <input id="dlp-minute" type="number" min="0" max="59" value="0"> <span id="dlp-minute-label"></span> <button type="button" id="dlp-ics" class="ghost"></button></p></div></details><details><summary><span id="dlp-label-notes"></span> <span class="pill" id="dlp-warn-count">0</span></summary><div class="body"><pre id="dlp-warnings"></pre><p class="fine" id="dlp-fine"></p><p><button type="button" id="dlp-export-json" class="ghost"></button> <button type="button" id="dlp-import-json" class="ghost"></button><input id="dlp-import-file" type="file" accept="application/json,.json" hidden></p></div></details>');
   slot.ui.body.appendChild(panel);
+  if (DBI_SCAN_CHANNEL === 'test') {
+    var testStyle = slot.ui.createElement('style');
+    testStyle.textContent = '#dlp-test-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;padding:10px 12px;background:#fff4d6;color:#6a4b00;border:2px solid #d08a2e;border-radius:12px;font-weight:650}#dlp-test-banner button{background:#d08a2e;border-color:#d08a2e;color:#fff}';
+    panel.appendChild(testStyle);
+    var testBanner = slot.ui.createElement('div');
+    testBanner.id = 'dlp-test-banner';
+    var testNote = slot.ui.createElement('span');
+    testNote.textContent = 'TEST. This scan does not change the good bookmark until you push the update.';
+    var testPush = slot.ui.createElement('button');
+    testPush.type = 'button';
+    testPush.id = 'dlp-push-update';
+    testPush.textContent = 'Push update';
+    testBanner.appendChild(testNote);
+    testBanner.appendChild(testPush);
+    panel.insertBefore(testBanner, panel.firstChild);
+    testPush.onclick = function () {
+      var ok = false;
+      try { ok = slot.dash.confirm('Replace the good bookmark with this tested scan?'); } catch (error) { ok = false; }
+      if (!ok) return;
+      slot.dash.open('https://github.com/nelurs/dbi-leader-dashboard/actions/workflows/promote-scan.yml', '_blank', 'noopener');
+    };
+  }
 
   function setText(id, value) { var node = byId(id); if (node) node.textContent = value; }
   function option(select, value, label) {

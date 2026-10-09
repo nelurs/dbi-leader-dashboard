@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DBI Leader Dashboard</title>
+  <style>
+    :root {
+      --ink: #1c2430;
+      --muted: #5c6775;
+      --line: #d9d1c3;
+      --paper: #f6f1e8;
+      --card: #fffdf8;
+      --accent: #1f4e46;
+      --gold: #a9782a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #fff 0, transparent 42%),
+        var(--paper);
+      font: 18px/1.5 Georgia, "Palatino Linotype", Palatino, serif;
+    }
+    main {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 3rem 1.25rem 4rem;
+    }
+    h1 {
+      margin: 0 0 0.25rem;
+      font-size: 2.4rem;
+      font-weight: normal;
+      letter-spacing: -0.03em;
+    }
+    .subtitle {
+      margin: 0 0 1rem;
+      color: var(--gold);
+      font-style: italic;
+    }
+    .banner {
+      margin: 0 0 1.5rem;
+      padding: 0.9rem 1rem;
+      background: #fff8ea;
+      border: 1px solid var(--gold);
+      color: var(--ink);
+    }
+    .banner strong { font-weight: 600; }
+    .where {
+      margin: 0.8rem 0 0;
+      font: 0.9rem/1.4 system-ui, sans-serif;
+      word-break: break-all;
+    }
+    ol {
+      margin: 0 0 2rem;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+    }
+    li {
+      counter-increment: step;
+      margin: 0 0 0.9rem;
+      padding: 0.9rem 1rem 0.9rem 3.4rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      position: relative;
+    }
+    li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0.85rem;
+      top: 0.85rem;
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font: 600 0.95rem/1.7rem system-ui, sans-serif;
+      text-align: center;
+    }
+    .bookmark-wrap {
+      padding: 1.25rem;
+      background: var(--accent);
+      color: #f4efe6;
+    }
+    .bookmark-wrap p { margin: 0 0 0.8rem; }
+    a.bookmark {
+      display: inline-block;
+      padding: 0.55rem 0.9rem;
+      background: #fffdf8;
+      color: var(--ink);
+      border: 1px dashed var(--gold);
+      text-decoration: none;
+      font: 600 1rem/1.2 system-ui, sans-serif;
+      cursor: grab;
+    }
+    a.bookmark:hover { border-style: solid; }
+    .hint {
+      margin: 0.8rem 0 0;
+      color: #d7ebe4;
+      font: 0.95rem/1.4 system-ui, sans-serif;
+    }
+    .ro {
+      margin-top: 2.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .ro h2 {
+      margin: 0 0 0.4rem;
+      font-size: 1.15rem;
+      font-weight: normal;
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>DBI Leader Dashboard</h1>
+    <p class="subtitle">Make disciples of all the nations.</p>
+    <p class="banner">Drag the bookmark once. Each later update is in the scan it loads, so the same bookmark picks it up the next time you click it, about a minute after GitHub Pages rebuilds.</p>
+    <ol>
+      <li>Drag the bookmark below onto the bookmarks bar. One drag is enough.</li>
+      <li>Sign in on digitalbibleinstitute.com as Group leader.</li>
+      <li>Open assignments, allow pop-ups for that site, and click the bookmark. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments. Leave the assignments tab in front while it scans.</li>
+    </ol>
+    <div class="bookmark-wrap">
+      <p>Drag this bookmark to the bookmarks bar:</p>
+      <a class="bookmark" id="scan-bookmark" href="#">DBI Leader Scan</a>
+      <p class="hint">One bookmark is enough. A later update of the scan loads the next time you click it. Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside the leader tab.</p>
+      <p class="where">This bookmark loads: <span id="scan-src"></span></p>
+    </div>
+    <section class="ro" lang="ro">
+      <h2>Pe scurt, în română</h2>
+      <p>Un singur marcaj este de ajuns. La fiecare actualizare, același marcaj încarcă scanarea nouă la următoarea apăsare, la circa un minut după ce pagina GitHub se actualizează. Conectați-vă ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul. Tabloul se deschide alături și așteaptă. Alegeți limba, apoi apăsați Scanează temele. Lăsați tabul cu temele în față în timpul scanării.</p>
+    </section>
+  </main>
+  <script>
+    (function () {
+      var pages = location.protocol.indexOf('http') === 0
+        ? new URL('./scan.js', location.href).href
+        : 'https://nelurs.github.io/dbi-leader-dashboard/scan.js';
+      var code = "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var s=document.createElement('script');s.src=" + JSON.stringify(pages) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
+      document.getElementById('scan-bookmark').href = 'javascript:' + code;
+      document.getElementById('scan-src').textContent = pages;
+    })();
+  </script>
+</body>
+</html>

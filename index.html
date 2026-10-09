@@ -101,6 +101,11 @@
       color: #d7ebe4;
       font: 0.95rem/1.4 system-ui, sans-serif;
     }
+    .bookmark-wrap.test {
+      margin-top: 1rem;
+      background: #6a4b00;
+    }
+    .bookmark-wrap.test .hint { color: #ffe7b0; }
     .ro {
       margin-top: 2.5rem;
       padding-top: 1.25rem;
@@ -119,21 +124,27 @@
   <main>
     <h1>DBI Leader Dashboard</h1>
     <p class="subtitle">Make disciples of all the nations.</p>
-    <p class="banner">Drag the bookmark once. Each later update is in the scan it loads, so the same bookmark picks it up the next time you click it, about a minute after GitHub Pages rebuilds.</p>
+    <p class="banner">Keep the bookmark you already use. It loads the good scan. Drag the test bookmark once if you want to try a change. The good bookmark changes only after Push update.</p>
     <ol>
-      <li>Drag the bookmark below onto the bookmarks bar. One drag is enough.</li>
-      <li>Sign in on digitalbibleinstitute.com as Group leader.</li>
-      <li>Open assignments, allow pop-ups for that site, and click the bookmark. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments. Leave the assignments tab in front while it scans.</li>
+      <li>Leave the existing <strong>DBI Leader Scan</strong> bookmark where it is. Drag <strong>DBI Leader Scan test</strong> onto the bookmarks bar once.</li>
+      <li>Sign in on digitalbibleinstitute.com as Group leader and open assignments.</li>
+      <li>Click the bookmark you want. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments. The test dashboard is marked TEST and has Push update.</li>
     </ol>
     <div class="bookmark-wrap">
-      <p>Drag this bookmark to the bookmarks bar:</p>
+      <p>Good bookmark. This is the one you already have:</p>
       <a class="bookmark" id="scan-bookmark" href="#">DBI Leader Scan</a>
-      <p class="hint">One bookmark is enough. A later update of the scan loads the next time you click it. Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside the leader tab.</p>
+      <p class="hint">This loads the fast scan you approved. It does not change when the test scan changes. Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside the leader tab.</p>
       <p class="where">This bookmark loads: <span id="scan-src"></span></p>
+    </div>
+    <div class="bookmark-wrap test">
+      <p>Test bookmark. Drag this once to try changes:</p>
+      <a class="bookmark" id="scan-test-bookmark" href="#">DBI Leader Scan test</a>
+      <p class="hint">Use this bookmark to try changes. The good bookmark changes only after you click Push update on the test dashboard and run that action.</p>
+      <p class="where">This bookmark loads: <span id="scan-test-src"></span></p>
     </div>
     <section class="ro" lang="ro">
       <h2>Pe scurt, în română</h2>
-      <p>Un singur marcaj este de ajuns. La fiecare actualizare, același marcaj încarcă scanarea nouă la următoarea apăsare, la circa un minut după ce pagina GitHub se actualizează. Conectați-vă ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul. Tabloul se deschide alături și așteaptă. Alegeți limba, apoi apăsați Scanează temele. Lăsați tabul cu temele în față în timpul scanării.</p>
+      <p>Păstrați marcajul bun, <strong>DBI Leader Scan</strong>. El încarcă scanarea aprobată. Trageți o singură dată marcajul de test, <strong>DBI Leader Scan test</strong>. Marcajul de test este cel pe care încercați schimbările. Marcajul bun se schimbă numai după ce apăsați Push update pe tabloul de test și rulați acea acțiune. Conectați-vă ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul ales. Tabloul se deschide alături și așteaptă. Alegeți limba, apoi apăsați Scanează temele.</p>
     </section>
   </main>
   <script>
@@ -141,9 +152,16 @@
       var pages = location.protocol.indexOf('http') === 0
         ? new URL('./scan.js', location.href).href
         : 'https://nelurs.github.io/dbi-leader-dashboard/scan.js';
-      var code = "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var s=document.createElement('script');s.src=" + JSON.stringify(pages) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
-      document.getElementById('scan-bookmark').href = 'javascript:' + code;
+      var testPages = location.protocol.indexOf('http') === 0
+        ? new URL('./scan-test.js', location.href).href
+        : 'https://nelurs.github.io/dbi-leader-dashboard/scan-test.js';
+      function loader(src) {
+        return "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var s=document.createElement('script');s.src=" + JSON.stringify(src) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
+      }
+      document.getElementById('scan-bookmark').href = 'javascript:' + loader(pages);
       document.getElementById('scan-src').textContent = pages;
+      document.getElementById('scan-test-bookmark').href = 'javascript:' + loader(testPages);
+      document.getElementById('scan-test-src').textContent = testPages;
     })();
   </script>
 </body>
