@@ -4,6 +4,8 @@
 (function () {
   'use strict';
   var DBI_SCAN_CHANNEL = 'good';
+  // Changes on this test scan that are not in production yet. Add one sentence key in the same edit. Clear this array after Push update promotes those changes. Do not list the TEST banner or the Push update button.
+  var PENDING_PUSH = ['pushItemReview', 'pushItemSent'];
   if (location.hostname !== 'digitalbibleinstitute.com') {
     window.alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');
     return;
@@ -67,6 +69,23 @@
     reviewNow: 'Review now',
     openReview: 'Open review',
     opened: 'Opened',
+    reviewOpenNote: '%%s1%% · %%module%% · %%title%% is open on the assignments tab. Switch to that tab to see it.',
+    pushListTitle: 'Updates to push',
+    pushListEmpty: 'Nothing new to push.',
+    pushItemReview: 'After Review now, the dashboard shows the student, module, and assignment, and says it is open on the assignments tab so you should switch to that tab.',
+    pushItemSent: 'After you send feedback, that assignment leaves Waiting on you immediately. You do not scan again.',
+    pushHelpTitle: 'How to promote',
+    pushHelp1: 'Read Updates to push.',
+    pushHelp2: 'Click Push update and confirm.',
+    pushHelp3: 'Click Run workflow on the test dashboard.',
+    pushHelp4: 'On the GitHub page, if you see Sign in at the top right, click Sign in and sign in as the owner of nelurs/dbi-leader-dashboard. The Run workflow button is hidden until you are signed in. The empty "This workflow has no runs yet" screen means it has not started.',
+    pushHelp5: 'After sign-in, on the right side of "Promote tested scan", click Run workflow, then click the green Run workflow in the small menu.',
+    pushHelp6: 'Wait until that run shows a green check, about a minute more for GitHub Pages.',
+    pushHelp7: 'Click the same good DBI Leader Scan bookmark.',
+    promoteWait: 'Waiting for the good bookmark to update. The test bookmark looks the same. This line changes when the good scan includes the review confirmation.',
+    promoteOk: 'The good bookmark is updated. Click the same DBI Leader Scan bookmark. The test bookmark stays the same.',
+    promoteFail: 'The good bookmark did not update. Sign in on the GitHub page, click Run workflow on the right of Promote tested scan, then click the green Run workflow.',
+    pushHelpPath: 'The test bookmark page on this computer is',
     notSubmittedBtn: 'Not submitted',
     statusFeedback: 'Waiting on you',
     statusMissing: 'Not submitted by the student',
@@ -192,6 +211,23 @@
     reviewNow: 'Evaluează acum',
     openReview: 'Deschide evaluarea',
     opened: 'Deschis',
+    reviewOpenNote: '%%s1%% · %%module%% · %%title%% este deschisă în tabul cu teme. Treceți la acel tab ca să o vedeți.',
+    pushListTitle: 'Actualizări de publicat',
+    pushListEmpty: 'Nimic nou de publicat.',
+    pushItemReview: 'După Evaluează acum, tabloul arată studentul, modulul și tema și spune că este deschisă în tabul cu teme, ca să treceți la acel tab.',
+    pushItemSent: 'După ce trimiteți feedbackul, tema iese imediat din Așteaptă evaluarea ta. Nu mai scanați.',
+    pushHelpTitle: 'Cum publicați',
+    pushHelp1: 'Citiți Actualizări de publicat.',
+    pushHelp2: 'Apăsați Push update și confirmați.',
+    pushHelp3: 'Apăsați Run workflow pe tabloul de test.',
+    pushHelp4: 'Pe pagina GitHub, dacă vedeți Sign in în dreapta sus, apăsați Sign in și intrați ca proprietarul nelurs/dbi-leader-dashboard. Butonul Run workflow este ascuns până vă autentificați. Ecranul gol „This workflow has no runs yet” înseamnă că acțiunea nu a pornit.',
+    pushHelp5: 'După autentificare, în dreapta titlului „Promote tested scan”, apăsați Run workflow, apoi apăsați Run workflow verde din meniul mic.',
+    pushHelp6: 'Așteptați până când rularea are o bifă verde, apoi încă aproximativ un minut pentru GitHub Pages.',
+    pushHelp7: 'Apăsați același marcaj bun DBI Leader Scan.',
+    promoteWait: 'Așteptăm actualizarea marcajului bun. Marcajul de test arată la fel. Acest rând se schimbă când scanarea bună conține confirmarea evaluării.',
+    promoteOk: 'Marcajul bun este actualizat. Apăsați același marcaj DBI Leader Scan. Marcajul de test rămâne la fel.',
+    promoteFail: 'Marcajul bun nu s-a actualizat. Autentificați-vă pe pagina GitHub, apăsați Run workflow în dreapta titlului Promote tested scan, apoi apăsați Run workflow verde.',
+    pushHelpPath: 'Pagina marcajului de test de pe acest calculator este',
     notSubmittedBtn: 'Netrimisă',
     statusFeedback: 'Așteaptă evaluarea ta',
     statusMissing: 'Netrimisă de student',
@@ -361,6 +397,8 @@
   var latest = null;
   var busy = false;
   var openedKeys = new Set();
+  var reviewItem = null;
+  var pendingReview = null;
   var groupFocus = '';
   var result = null;
 
@@ -1395,11 +1433,11 @@
   var style = slot.ui.createElement('style');
   style.textContent = '#dbi-leader-dash{min-height:100vh;overflow:auto;background:#eef3f8;color:#17304b;font:15px/1.45 "Segoe UI",system-ui,sans-serif;padding:18px 20px 28px}#dbi-leader-dash h1{margin:0;font-size:1.6rem}#dbi-leader-dash h2{margin:0;font-size:1.35rem}#dbi-leader-dash button,#dbi-leader-dash input,#dbi-leader-dash select{font:inherit;padding:8px 10px;margin:4px;border:1px solid #c5d3e0;border-radius:8px;background:#fff;color:#17304b}#dbi-leader-dash button{background:#174c78;color:#fff;cursor:pointer;border-color:#174c78;font-weight:650}#dbi-leader-dash button.ghost{background:#fff;color:#174c78}#dbi-leader-dash button:disabled{opacity:.5}#dbi-leader-dash .top{display:flex;justify-content:space-between;gap:16px;align-items:flex-end}#dbi-leader-dash .lede,#dbi-leader-dash .fine{color:#5c7286}#dbi-leader-dash .hero{display:grid;grid-template-columns:1.5fr .7fr;gap:18px;background:linear-gradient(145deg,#10283f,#1a5278 70%,#2a6f73);color:#fff;border-radius:16px;padding:20px;margin:10px 0}#dbi-leader-dash .hero .eyebrow{color:#b7d4ea;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}#dbi-leader-dash .hero-count{font-size:3rem;font-weight:720;line-height:.9;margin:4px 0}#dbi-leader-dash #dlp-brief{color:#d5e6f2}#dbi-leader-dash #dlp-side p{margin:0 0 8px;background:rgba(255,255,255,.12);border-radius:12px;padding:12px}#dbi-leader-dash .next-card{display:flex;justify-content:space-between;gap:12px;background:#fff;color:#17304b;border-radius:12px;padding:12px;margin-top:8px}#dbi-leader-dash #dlp-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}#dbi-leader-dash #dlp-cards article{background:#fff;border-radius:12px;padding:12px}#dbi-leader-dash #dlp-cards strong{display:block;font-size:1.4rem}#dbi-leader-dash details{background:#fff;border-radius:12px;margin:10px 0}#dbi-leader-dash summary{cursor:pointer;padding:12px 14px;font-weight:700}#dbi-leader-dash .body{padding:0 14px 14px}#dbi-leader-dash table{width:100%;border-collapse:collapse}#dbi-leader-dash td,#dbi-leader-dash th{padding:8px;text-align:left;border-bottom:1px solid #e4ebf2;vertical-align:top}#dbi-leader-dash th{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#5c7286}#dbi-leader-dash .bar{display:flex;height:12px;background:#e6eef5;border-radius:7px;overflow:hidden;margin:6px 0}#dbi-leader-dash .you{background:#174c78;height:100%}#dbi-leader-dash .them{background:#d08a2e;height:100%}#dbi-leader-dash .pill{float:right;background:#e7eef5;color:#174c78;border-radius:999px;padding:2px 8px}#dbi-leader-dash .langpick{position:relative;display:inline-block}#dbi-leader-dash .langpanel{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:min(340px,80vw);max-height:420px;overflow:auto;background:#fff;color:#17304b;border:1px solid #c5d3e0;border-radius:14px;box-shadow:0 16px 40px rgba(16,40,63,.16);padding:10px}#dbi-leader-dash .langpanel input{width:100%;box-sizing:border-box;margin:0 0 8px}#dbi-leader-dash .langsec{margin:10px 4px 4px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5c7286}#dbi-leader-dash .langrow{display:flex;align-items:center;gap:4px}#dbi-leader-dash .langrow .pick{flex:1;text-align:left;background:#fff;color:#17304b;border-color:transparent;font-weight:500}#dbi-leader-dash .langrow.current .pick{background:#e7eef5;color:#174c78;font-weight:700}#dbi-leader-dash .langrow .star{width:36px;background:#fff;color:#174c78;border-color:transparent;padding:8px}@media(max-width:800px){#dbi-leader-dash .hero,#dbi-leader-dash .top{display:block}#dbi-leader-dash #dlp-cards{grid-template-columns:1fr 1fr}}';
   panel.appendChild(style);
-  panel.insertAdjacentHTML('beforeend', '<div class="top"><div><h1>DBI Leader Dashboard</h1><p id="dlp-subtitle"></p><p class="lede" id="dlp-lede"></p></div><div class="lang"><div class="langpick"><button type="button" id="dlp-lang" class="ghost" aria-haspopup="dialog" aria-expanded="false" aria-controls="dlp-lang-panel">English</button><div id="dlp-lang-panel" class="langpanel" hidden role="dialog" aria-label="Language"><input id="dlp-lang-search" type="search" autocomplete="off"><div id="dlp-lang-list"></div></div></div><button type="button" id="dlp-scan"></button><button type="button" id="dlp-cancel" class="ghost" disabled></button><button type="button" id="dlp-clear" class="ghost"></button><button type="button" id="dlp-close" class="ghost">Close</button></div></div><p id="dlp-progress" role="status"></p><section class="hero"><div><p class="eyebrow" id="dlp-kicker"></p><p class="hero-count" id="dlp-count"></p><h2 id="dlp-hero-title"></h2><p id="dlp-brief"></p><div id="dlp-next"></div></div><aside id="dlp-side"></aside></section><div id="dlp-cards"></div><details open><summary><span id="dlp-label-modules"></span> <span class="pill" id="dlp-module-count">0</span></summary><div class="body" id="dlp-modules"></div></details><details open><summary><span id="dlp-label-work"></span> <span class="pill" id="dlp-work-count">0</span></summary><div class="body"><p><input id="dlp-search"><select id="dlp-status"></select><select id="dlp-module"></select><select id="dlp-group"></select><button type="button" id="dlp-export" class="ghost"></button></p><p id="dlp-coverage" class="fine"></p><table><thead><tr><th id="dlp-th-student"></th><th id="dlp-th-group"></th><th id="dlp-th-module"></th><th id="dlp-th-assignment"></th><th id="dlp-th-status"></th><th id="dlp-th-action"></th></tr></thead><tbody id="dlp-rows"></tbody></table></div></details><details open><summary><span id="dlp-label-groups"></span> <span class="pill" id="dlp-group-count">0</span></summary><div class="body"><p><select id="dlp-group-pick"></select></p><div id="dlp-group-detail"></div><table><thead><tr><th id="dlp-th-group2"></th><th id="dlp-th-rows"></th><th id="dlp-th-feedback"></th><th id="dlp-th-missing"></th><th id="dlp-th-caught"></th><th id="dlp-th-behind"></th></tr></thead><tbody id="dlp-groups"></tbody></table></div></details><details open><summary><span id="dlp-label-students"></span> <span class="pill" id="dlp-student-count">0</span></summary><div class="body"><p><select id="dlp-student-pick"></select><button type="button" id="dlp-export-student" class="ghost" disabled></button></p><div id="dlp-student-detail"></div><table><thead><tr><th id="dlp-th-student2"></th><th id="dlp-th-group3"></th><th id="dlp-th-feedback2"></th><th id="dlp-th-missing2"></th><th id="dlp-th-total"></th></tr></thead><tbody id="dlp-students"></tbody></table></div></details><details><summary><span id="dlp-label-reminder"></span></summary><div class="body"><p class="fine" id="dlp-reminder-note"></p><p id="dlp-days"><label><input type="checkbox" data-day="0" checked> <span id="dlp-day-0"></span></label> <label><input type="checkbox" data-day="1" checked> <span id="dlp-day-1"></span></label> <label><input type="checkbox" data-day="2" checked> <span id="dlp-day-2"></span></label> <label><input type="checkbox" data-day="3" checked> <span id="dlp-day-3"></span></label> <label><input type="checkbox" data-day="4" checked> <span id="dlp-day-4"></span></label> <label><input type="checkbox" data-day="5" checked> <span id="dlp-day-5"></span></label> <label><input type="checkbox" data-day="6" checked> <span id="dlp-day-6"></span></label></p><p><span id="dlp-time-label"></span> <input id="dlp-hour" type="number" min="0" max="23" value="10"> <span id="dlp-hour-label"></span> <input id="dlp-minute" type="number" min="0" max="59" value="0"> <span id="dlp-minute-label"></span> <button type="button" id="dlp-ics" class="ghost"></button></p></div></details><details><summary><span id="dlp-label-notes"></span> <span class="pill" id="dlp-warn-count">0</span></summary><div class="body"><pre id="dlp-warnings"></pre><p class="fine" id="dlp-fine"></p><p><button type="button" id="dlp-export-json" class="ghost"></button> <button type="button" id="dlp-import-json" class="ghost"></button><input id="dlp-import-file" type="file" accept="application/json,.json" hidden></p></div></details>');
+  panel.insertAdjacentHTML('beforeend', '<div class="top"><div><h1>DBI Leader Dashboard</h1><p id="dlp-subtitle"></p><p class="lede" id="dlp-lede"></p></div><div class="lang"><div class="langpick"><button type="button" id="dlp-lang" class="ghost" aria-haspopup="dialog" aria-expanded="false" aria-controls="dlp-lang-panel">English</button><div id="dlp-lang-panel" class="langpanel" hidden role="dialog" aria-label="Language"><input id="dlp-lang-search" type="search" autocomplete="off"><div id="dlp-lang-list"></div></div></div><button type="button" id="dlp-scan"></button><button type="button" id="dlp-cancel" class="ghost" disabled></button><button type="button" id="dlp-clear" class="ghost"></button><button type="button" id="dlp-close" class="ghost">Close</button></div></div><p id="dlp-progress" role="status"></p><p id="dlp-review-note" hidden style="margin:8px 0;padding:12px 14px;background:#e7f6ee;color:#0f5132;border-radius:12px;font-weight:650"></p><section class="hero"><div><p class="eyebrow" id="dlp-kicker"></p><p class="hero-count" id="dlp-count"></p><h2 id="dlp-hero-title"></h2><p id="dlp-brief"></p><div id="dlp-next"></div></div><aside id="dlp-side"></aside></section><div id="dlp-cards"></div><details open><summary><span id="dlp-label-modules"></span> <span class="pill" id="dlp-module-count">0</span></summary><div class="body" id="dlp-modules"></div></details><details open><summary><span id="dlp-label-work"></span> <span class="pill" id="dlp-work-count">0</span></summary><div class="body"><p><input id="dlp-search"><select id="dlp-status"></select><select id="dlp-module"></select><select id="dlp-group"></select><button type="button" id="dlp-export" class="ghost"></button></p><p id="dlp-coverage" class="fine"></p><table><thead><tr><th id="dlp-th-student"></th><th id="dlp-th-group"></th><th id="dlp-th-module"></th><th id="dlp-th-assignment"></th><th id="dlp-th-status"></th><th id="dlp-th-action"></th></tr></thead><tbody id="dlp-rows"></tbody></table></div></details><details open><summary><span id="dlp-label-groups"></span> <span class="pill" id="dlp-group-count">0</span></summary><div class="body"><p><select id="dlp-group-pick"></select></p><div id="dlp-group-detail"></div><table><thead><tr><th id="dlp-th-group2"></th><th id="dlp-th-rows"></th><th id="dlp-th-feedback"></th><th id="dlp-th-missing"></th><th id="dlp-th-caught"></th><th id="dlp-th-behind"></th></tr></thead><tbody id="dlp-groups"></tbody></table></div></details><details open><summary><span id="dlp-label-students"></span> <span class="pill" id="dlp-student-count">0</span></summary><div class="body"><p><select id="dlp-student-pick"></select><button type="button" id="dlp-export-student" class="ghost" disabled></button></p><div id="dlp-student-detail"></div><table><thead><tr><th id="dlp-th-student2"></th><th id="dlp-th-group3"></th><th id="dlp-th-feedback2"></th><th id="dlp-th-missing2"></th><th id="dlp-th-total"></th></tr></thead><tbody id="dlp-students"></tbody></table></div></details><details><summary><span id="dlp-label-reminder"></span></summary><div class="body"><p class="fine" id="dlp-reminder-note"></p><p id="dlp-days"><label><input type="checkbox" data-day="0" checked> <span id="dlp-day-0"></span></label> <label><input type="checkbox" data-day="1" checked> <span id="dlp-day-1"></span></label> <label><input type="checkbox" data-day="2" checked> <span id="dlp-day-2"></span></label> <label><input type="checkbox" data-day="3" checked> <span id="dlp-day-3"></span></label> <label><input type="checkbox" data-day="4" checked> <span id="dlp-day-4"></span></label> <label><input type="checkbox" data-day="5" checked> <span id="dlp-day-5"></span></label> <label><input type="checkbox" data-day="6" checked> <span id="dlp-day-6"></span></label></p><p><span id="dlp-time-label"></span> <input id="dlp-hour" type="number" min="0" max="23" value="10"> <span id="dlp-hour-label"></span> <input id="dlp-minute" type="number" min="0" max="59" value="0"> <span id="dlp-minute-label"></span> <button type="button" id="dlp-ics" class="ghost"></button></p></div></details><details><summary><span id="dlp-label-notes"></span> <span class="pill" id="dlp-warn-count">0</span></summary><div class="body"><pre id="dlp-warnings"></pre><p class="fine" id="dlp-fine"></p><p><button type="button" id="dlp-export-json" class="ghost"></button> <button type="button" id="dlp-import-json" class="ghost"></button><input id="dlp-import-file" type="file" accept="application/json,.json" hidden></p></div></details>');
   slot.ui.body.appendChild(panel);
   if (DBI_SCAN_CHANNEL === 'test') {
     var testStyle = slot.ui.createElement('style');
-    testStyle.textContent = '#dlp-test-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;padding:10px 12px;background:#fff4d6;color:#6a4b00;border:2px solid #d08a2e;border-radius:12px;font-weight:650}#dlp-test-banner button{background:#d08a2e;border-color:#d08a2e;color:#fff}';
+    testStyle.textContent = '#dlp-test-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;padding:10px 12px;background:#fff4d6;color:#6a4b00;border:2px solid #d08a2e;border-radius:12px;font-weight:650}#dlp-test-banner button{background:#d08a2e;border-color:#d08a2e;color:#fff}#dlp-push-list,#dlp-push-help{margin:0 0 12px;padding:12px 14px;background:#fff;border:1px solid #d08a2e;border-radius:12px}#dlp-push-list h2,#dlp-push-help h2{font-size:1rem;margin:0 0 8px}#dlp-push-list ul,#dlp-push-help ol{margin:0;padding-left:1.2rem}#dlp-push-help li{margin:0 0 6px}';
     panel.appendChild(testStyle);
     var testBanner = slot.ui.createElement('div');
     testBanner.id = 'dlp-test-banner';
@@ -1411,13 +1449,104 @@
     testPush.textContent = 'Push update';
     testBanner.appendChild(testNote);
     testBanner.appendChild(testPush);
+    var runWorkflow = slot.ui.createElement('button');
+    runWorkflow.type = 'button';
+    runWorkflow.id = 'dlp-run-workflow';
+    runWorkflow.textContent = 'Run workflow';
+    var promoteUrl = 'https://github.com/nelurs/dbi-leader-dashboard/actions/workflows/promote-scan.yml';
+    var promoteState = '';
+    var promoteStarted = 0;
+    var promoteTimer = null;
+    function paintPromoteStatus() {
+      var node = byId('dlp-promote-status');
+      if (!node) return;
+      var text = '';
+      var color = '#6a4b00';
+      if (promoteState === 'ok') { text = t('promoteOk'); color = '#0f5132'; }
+      else if (promoteState === 'fail') { text = t('promoteFail'); color = '#842029'; }
+      else if (promoteState === 'wait') { text = t('promoteWait'); color = '#6a4b00'; }
+      node.textContent = text;
+      node.style.color = color;
+      node.hidden = !text;
+    }
+    function goodScanReady(text) {
+      return text.indexOf("var DBI_SCAN_CHANNEL = 'good'") !== -1 && text.indexOf('reviewOpenNote') !== -1 && text.indexOf('function markFeedbackSent') !== -1;
+    }
+    function checkGoodScan() {
+      fetch('https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=' + Date.now()).then(function (res) {
+        if (!res.ok) throw Error('scan');
+        return res.text();
+      }).then(function (text) {
+        if (goodScanReady(text)) {
+          promoteState = 'ok';
+          if (promoteTimer) clearInterval(promoteTimer);
+          promoteTimer = null;
+        } else if (Date.now() - promoteStarted > 4 * 60 * 1000) promoteState = 'fail';
+        paintPromoteStatus();
+      }).catch(function () {
+        if (Date.now() - promoteStarted > 4 * 60 * 1000) promoteState = 'fail';
+        paintPromoteStatus();
+      });
+    }
+    function startPromoteWatch() {
+      promoteState = 'wait';
+      promoteStarted = Date.now();
+      paintPromoteStatus();
+      checkGoodScan();
+      if (promoteTimer) clearInterval(promoteTimer);
+      promoteTimer = setInterval(checkGoodScan, 15000);
+    }
+    function openPromote() {
+      startPromoteWatch();
+      slot.dash.open(promoteUrl, '_blank', 'noopener');
+    }
+    runWorkflow.onclick = openPromote;
+    testBanner.appendChild(runWorkflow);
+    var menuRun = slot.ui.createElement('button');
+    menuRun.type = 'button';
+    menuRun.id = 'dlp-run-workflow-menu';
+    menuRun.textContent = 'Run workflow';
+    menuRun.onclick = openPromote;
+    var menu = panel.querySelector('.lang');
+    if (menu) menu.appendChild(menuRun);
     panel.insertBefore(testBanner, panel.firstChild);
+    var pushList = slot.ui.createElement('section');
+    pushList.id = 'dlp-push-list';
+    var pushTitle = slot.ui.createElement('h2');
+    pushTitle.id = 'dlp-push-title';
+    var pushItems = slot.ui.createElement('ul');
+    pushItems.id = 'dlp-push-items';
+    pushList.appendChild(pushTitle);
+    pushList.appendChild(pushItems);
+    panel.insertBefore(pushList, testBanner.nextSibling);
+    var pushHelp = slot.ui.createElement('section');
+    pushHelp.id = 'dlp-push-help';
+    var helpTitle = slot.ui.createElement('h2');
+    helpTitle.id = 'dlp-push-help-title';
+    var helpSteps = slot.ui.createElement('ol');
+    for (var helpIndex = 1; helpIndex <= 7; helpIndex++) {
+      var helpStep = slot.ui.createElement('li');
+      helpStep.id = 'dlp-push-help-' + helpIndex;
+      helpSteps.appendChild(helpStep);
+    }
+    pushHelp.appendChild(helpTitle);
+    pushHelp.appendChild(helpSteps);
+    var helpPath = slot.ui.createElement('p');
+    helpPath.id = 'dlp-push-help-path';
+    pushHelp.appendChild(helpPath);
+    var promoteStatus = slot.ui.createElement('p');
+    promoteStatus.id = 'dlp-promote-status';
+    promoteStatus.hidden = true;
+    promoteStatus.style.fontWeight = '650';
+    pushHelp.appendChild(promoteStatus);
+    panel.insertBefore(pushHelp, pushList.nextSibling);
     testPush.onclick = function () {
       var ok = false;
       try { ok = slot.dash.confirm('Replace the good bookmark with this tested scan?'); } catch (error) { ok = false; }
       if (!ok) return;
-      slot.dash.open('https://github.com/nelurs/dbi-leader-dashboard/actions/workflows/promote-scan.yml', '_blank', 'noopener');
+      openPromote();
     };
+    slot.paintPromoteStatus = paintPromoteStatus;
   }
 
   function setText(id, value) { var node = byId(id); if (node) node.textContent = value; }
@@ -1481,18 +1610,152 @@
     }
     return { count: count, title: title, text: body, next: (people[0] && people[0].waiting) || (people[0] ? [people[0].first] : []), side: side };
   }
+  function focusAssignments() {
+    try { slot.dash.Function('try{if(window.opener)window.opener.focus()}catch(e){}')(); } catch (error) {}
+    try { window.focus(); } catch (error) {}
+  }
   function openItem(x) {
     if (busy || slot.running) return;
     busy = true;
+    reviewItem = null;
     render();
-    try { window.focus(); } catch (error) {}
+    focusAssignments();
     openReview(x).then(function (response) {
       busy = false;
-      if (response.ok) openedKeys.add(itemKey(x));
-      else byId('dlp-progress').textContent = response.message;
+      if (response.ok) {
+        openedKeys.add(itemKey(x));
+        reviewItem = { student: x.student, group: x.group, module: x.module, title: x.title, page: x.page, status: x.status };
+        pendingReview = reviewItem;
+        focusAssignments();
+      } else if (byId('dlp-progress')) byId('dlp-progress').textContent = response.message;
       render();
     });
   }
+  function reviewSentence() {
+    if (!reviewItem) return '';
+    var template = lang === 'ro' ? RO.reviewOpenNote : t('reviewOpenNote');
+    if (template.indexOf('%%s1%%') === -1 || template.indexOf('%%module%%') === -1 || template.indexOf('%%title%%') === -1) {
+      template = lang === 'ro' ? RO.reviewOpenNote : STR.reviewOpenNote;
+    }
+    return template.split('%%s1%%').join(reviewItem.student).split('%%module%%').join(moduleLabel(reviewItem.module)).split('%%title%%').join(lessonLabel(reviewItem.module, reviewItem.title));
+  }
+  var trackingSend = false;
+  function controlLabel(el) {
+    return ((el && (el.innerText || el.value || (el.getAttribute && el.getAttribute('aria-label')))) || '').replace(/\s+/g, ' ').trim();
+  }
+  function feedbackArea() {
+    var areas = [].filter.call(document.querySelectorAll('textarea'), function (el) {
+      var box = el.getBoundingClientRect();
+      return box.width > 80 && box.height > 40;
+    });
+    if (!areas.length) return null;
+    areas.sort(function (a, b) {
+      var ba = a.getBoundingClientRect();
+      var bb = b.getBoundingClientRect();
+      return (bb.top + bb.height) - (ba.top + ba.height) || (bb.width * bb.height) - (ba.width * ba.height);
+    });
+    return areas[0];
+  }
+  function sendControl(area) {
+    if (!area) return null;
+    var root = area.closest('form, [role="dialog"], .modal, .modal-content') || area.parentElement || document.body;
+    function visible(el) { return !!(el && el.getClientRects().length && !el.disabled); }
+    function inReview(el) { return visible(el) && (root.contains(el) || el === root); }
+    var controls = [].filter.call(root.querySelectorAll('button, input[type="submit"], [role="button"]'), inReview);
+    var english = controls.filter(function (el) { return /^send feedback$/i.test(controlLabel(el)); })[0];
+    if (english) return english;
+    var form = area.closest('form');
+    if (form) {
+      var submit = [].filter.call(form.querySelectorAll('button[type="submit"], input[type="submit"]'), visible)[0];
+      if (submit) return submit;
+    }
+    var areaWidth = area.getBoundingClientRect().width || 0;
+    var after = [].filter.call(root.querySelectorAll('button, input[type="submit"], [role="button"], div'), function (el) {
+      if (!inReview(el)) return false;
+      if (!(area.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)) return false;
+      if (el.querySelector && el.querySelector('textarea, button, input')) return false;
+      return true;
+    });
+    return after.filter(function (el) {
+      var box = el.getBoundingClientRect();
+      var clickable = el.matches('button, input[type="submit"], [role="button"]') || getComputedStyle(el).cursor === 'pointer' || /btn|button/i.test(String(el.className || ''));
+      return clickable && box.width >= Math.max(160, areaWidth * 0.55) && box.height >= 28 && box.height <= 90;
+    })[0] || null;
+  }
+  function reviewScreen() {
+    var area = feedbackArea();
+    var button = sendControl(area);
+    if (!area || !button) return null;
+    return { button: button, area: area };
+  }
+  function visibleNotes(selector, pattern) {
+    return [].filter.call(document.querySelectorAll(selector), function (el) { return el.getClientRects().length; }).map(function (el) { return (el.innerText || '').trim(); }).filter(function (t) { return pattern.test(t); }).join('\n');
+  }
+  function visibleErrors() { return visibleNotes('[role="alert"], .alert-danger, .invalid-feedback, .text-danger', /error|fail|invalid|required|unable|could not|try again/i); }
+  function visibleSuccess() { return visibleNotes('[role="status"], .alert-success, .toast, .Toastify__toast--success', /./); }
+  function sameAssignment(row, item) {
+    return row.student === item.student && row.group === item.group && canonicalModule(row.module) === canonicalModule(item.module) && fold(row.title) === fold(item.title);
+  }
+  function markFeedbackSent(item) {
+    if (!item) return;
+    items.forEach(function (row) {
+      if (row.status === 'Needs feedback' && sameAssignment(row, item)) row.status = 'Reviewed';
+    });
+    if (latest && Array.isArray(latest.roster)) {
+      latest.roster.forEach(function (row) {
+        if (row.student !== item.student || row.group !== item.group || canonicalModule(row.module) !== canonicalModule(item.module)) return;
+        var titles = row.feedbackTitles || [];
+        var id = fold(item.title);
+        var nextTitles = titles.filter(function (title) { return fold(title) !== id && fold(lessonEnglish(row.module, title)) !== id; });
+        if (nextTitles.length !== titles.length) {
+          row.feedbackTitles = nextTitles;
+          if (row.feedback > 0) row.feedback -= 1;
+          row.reviewed = (row.reviewed || 0) + 1;
+        }
+      });
+      latest.items = items;
+    }
+    if (reviewItem && sameAssignment(reviewItem, item)) reviewItem = null;
+    pendingReview = null;
+    saveLocal();
+    render();
+  }
+  function trackSend(item) {
+    if (trackingSend || !item) return;
+    trackingSend = true;
+    var errorsBefore = visibleErrors();
+    var successBefore = visibleSuccess();
+    var goneAt = 0;
+    var started = Date.now();
+    var timer = setInterval(inspect, 200);
+    tickers.add(inspect);
+    function inspect() {
+      var errorsNow = visibleErrors();
+      if (errorsNow && errorsNow !== errorsBefore) { finish('error'); return; }
+      var successNow = visibleSuccess();
+      if (successNow && successNow !== successBefore && !/error|fail|invalid|required|unable|could not|try again/i.test(successNow)) { finish('success'); return; }
+      if (!reviewScreen()) {
+        if (!goneAt) goneAt = Date.now();
+        if (Date.now() - goneAt >= 800) { finish('closed'); return; }
+      } else goneAt = 0;
+      if (Date.now() - started > 20000) finish('timeout');
+    }
+    function finish(outcome) {
+      clearInterval(timer);
+      tickers.delete(inspect);
+      trackingSend = false;
+      if (outcome === 'success' || outcome === 'closed') markFeedbackSent(item);
+    }
+  }
+  document.addEventListener('click', function (event) {
+    if (!pendingReview || trackingSend) return;
+    var screen = reviewScreen();
+    if (!screen) return;
+    var hit = event.target && event.target.closest && event.target.closest('button, input[type="submit"], [role="button"], div');
+    if (!hit || hit.disabled) return;
+    if (hit !== screen.button && !screen.button.contains(hit)) return;
+    trackSend(pendingReview);
+  }, true);
   function render() {
     if (lang === 'en') pack = STR;
     else if (lang === 'ro') pack = RO;
@@ -1507,6 +1770,34 @@
     setText('dlp-cancel', t('cancel'));
     setText('dlp-clear', t('clear'));
     setText('dlp-kicker', t('kicker'));
+    var reviewNote = byId('dlp-review-note');
+    if (reviewNote) {
+      var sentence = reviewSentence();
+      reviewNote.hidden = !sentence;
+      reviewNote.textContent = sentence;
+    }
+    if (DBI_SCAN_CHANNEL === 'test') {
+      setText('dlp-push-title', t('pushListTitle'));
+      var pushHost = byId('dlp-push-items');
+      if (pushHost) {
+        pushHost.replaceChildren();
+        var pending = PENDING_PUSH.filter(Boolean);
+        if (!pending.length) {
+          var empty = slot.ui.createElement('li');
+          empty.textContent = t('pushListEmpty');
+          pushHost.appendChild(empty);
+        } else pending.forEach(function (key) {
+          var item = slot.ui.createElement('li');
+          item.textContent = t(key);
+          pushHost.appendChild(item);
+        });
+      }
+      setText('dlp-push-help-title', t('pushHelpTitle'));
+      for (var helpStep = 1; helpStep <= 7; helpStep++) setText('dlp-push-help-' + helpStep, t('pushHelp' + helpStep));
+      if (slot.paintPromoteStatus) slot.paintPromoteStatus();
+      var helpPathNode = byId('dlp-push-help-path');
+      if (helpPathNode) helpPathNode.textContent = t('pushHelpPath') + ' C:\\Users\\johnu\\Downloads\\DBI_Leader_Dashboard_GithubPage\\local-only\\test-bookmark.html';
+    }
     setText('dlp-fine', t('fine'));
     setText('dlp-label-modules', t('panelModules'));
     setText('dlp-label-work', t('panelWork'));
