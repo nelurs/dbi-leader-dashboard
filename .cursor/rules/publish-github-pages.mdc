@@ -1,12 +1,14 @@
 ---
-description: Do not auto-publish DBI Leader Dashboard edits
+description: Never auto-publish this folder to GitHub Pages
 alwaysApply: true
 ---
 
-Do NOT commit or push dashboard edits unless the user explicitly asks to publish a test or to push the update.
+Editing files in this folder must NOT commit and must NOT push.
 
-Future experiments edit `scan-test.js` only. Never replace `scan.js` except by the promote workflow (`.github/workflows/promote-scan.yml`), which copies the tested scan over the good one after the leader confirms Push update.
+Do not publish unless the user explicitly says to publish a test or to run Push update. Never push production `scan.js` as a side effect of editing the folder.
 
-The good bookmark must keep loading `scan.js`. Publishing `scan-test.js` must not change `scan.js`.
+The good bookmark loads `https://nelurs.github.io/dbi-leader-dashboard/scan.js`. The test bookmark loads `https://nelurs.github.io/dbi-leader-dashboard/scan-test.js`. Experiments stay in `scan-test.js`.
 
-Never force-push. Never update git config. Never commit secrets.
+`scan.js` changes only when the user runs the Push update GitHub Action (`.github/workflows/promote-scan.yml`). That workflow is `workflow_dispatch` only. Do not add a `push` or `pull_request` trigger. Do not copy `scan-test.js` over `scan.js` from a hook, a save, or a local script.
+
+Never force-push. Never update git config. Never commit secrets. Never skip hooks.

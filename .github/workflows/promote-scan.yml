@@ -1,5 +1,7 @@
 name: Promote tested scan
 
+# Manual only. Do not add push or pull_request.
+# A save or commit in this folder must not run this workflow.
 on:
   workflow_dispatch:
 
