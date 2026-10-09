@@ -5,7 +5,7 @@
   'use strict';
   var DBI_SCAN_CHANNEL = 'test';
   // Changes on this test scan that are not in production yet. Add one sentence key in the same edit. Clear this array after Push update promotes those changes. Do not list the TEST banner or the Push update button.
-  var PENDING_PUSH = ['pushItemReview'];
+  var PENDING_PUSH = ['pushItemReview', 'pushItemSent'];
   if (location.hostname !== 'digitalbibleinstitute.com') {
     window.alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');
     return;
@@ -73,6 +73,7 @@
     pushListTitle: 'Updates to push',
     pushListEmpty: 'Nothing new to push.',
     pushItemReview: 'After Review now, the dashboard shows the student, module, and assignment, and says it is open on the assignments tab so you should switch to that tab.',
+    pushItemSent: 'After you send feedback, that assignment leaves Waiting on you immediately. You do not scan again.',
     pushHelpTitle: 'How to promote',
     pushHelp1: 'Read Updates to push.',
     pushHelp2: 'Click Push update and confirm "Replace the good bookmark with this tested scan?"',
@@ -80,6 +81,7 @@
     pushHelp4: 'On that GitHub page, click the Run workflow button. GitHub asks because this page cannot start the action by itself.',
     pushHelp5: 'Wait about a minute for GitHub Pages.',
     pushHelp6: 'Click the same good DBI Leader Scan bookmark. Do not drag a new one.',
+    pushHelpPath: 'The test bookmark page on this computer is',
     notSubmittedBtn: 'Not submitted',
     statusFeedback: 'Waiting on you',
     statusMissing: 'Not submitted by the student',
@@ -209,6 +211,7 @@
     pushListTitle: 'Actualizări de publicat',
     pushListEmpty: 'Nimic nou de publicat.',
     pushItemReview: 'După Evaluează acum, tabloul arată studentul, modulul și tema și spune că este deschisă în tabul cu teme, ca să treceți la acel tab.',
+    pushItemSent: 'După ce trimiteți feedbackul, tema iese imediat din Așteaptă evaluarea ta. Nu mai scanați.',
     pushHelpTitle: 'Cum publicați',
     pushHelp1: 'Citiți Actualizări de publicat.',
     pushHelp2: 'Apăsați Push update și confirmați „Replace the good bookmark with this tested scan?”',
@@ -216,6 +219,7 @@
     pushHelp4: 'Pe acea pagină GitHub, apăsați butonul Run workflow. GitHub cere acest pas pentru că această pagină nu poate porni acțiunea singură.',
     pushHelp5: 'Așteptați circa un minut până se actualizează GitHub Pages.',
     pushHelp6: 'Apăsați același marcaj bun DBI Leader Scan. Nu trageți unul nou.',
+    pushHelpPath: 'Pagina marcajului de test de pe acest calculator este',
     notSubmittedBtn: 'Netrimisă',
     statusFeedback: 'Așteaptă evaluarea ta',
     statusMissing: 'Netrimisă de student',
@@ -385,7 +389,8 @@
   var latest = null;
   var busy = false;
   var openedKeys = new Set();
-  var reviewNotice = '';
+  var reviewItem = null;
+  var pendingReview = null;
   var groupFocus = '';
   var result = null;
 
@@ -1475,6 +1480,9 @@
     }
     pushHelp.appendChild(helpTitle);
     pushHelp.appendChild(helpSteps);
+    var helpPath = slot.ui.createElement('p');
+    helpPath.id = 'dlp-push-help-path';
+    pushHelp.appendChild(helpPath);
     panel.insertBefore(pushHelp, pushList.nextSibling);
     testPush.onclick = function () {
       var ok = false;
@@ -1552,19 +1560,145 @@
   function openItem(x) {
     if (busy || slot.running) return;
     busy = true;
-    reviewNotice = '';
+    reviewItem = null;
     render();
     focusAssignments();
     openReview(x).then(function (response) {
       busy = false;
       if (response.ok) {
         openedKeys.add(itemKey(x));
-        reviewNotice = fill('reviewOpenNote', { student: x.student, module: moduleLabel(x.module), title: lessonLabel(x.module, x.title) });
+        reviewItem = { student: x.student, group: x.group, module: x.module, title: x.title, page: x.page, status: x.status };
+        pendingReview = reviewItem;
         focusAssignments();
       } else if (byId('dlp-progress')) byId('dlp-progress').textContent = response.message;
       render();
     });
   }
+  function reviewSentence() {
+    if (!reviewItem) return '';
+    var template = lang === 'ro' ? RO.reviewOpenNote : t('reviewOpenNote');
+    if (template.indexOf('%%s1%%') === -1 || template.indexOf('%%module%%') === -1 || template.indexOf('%%title%%') === -1) {
+      template = lang === 'ro' ? RO.reviewOpenNote : STR.reviewOpenNote;
+    }
+    return template.split('%%s1%%').join(reviewItem.student).split('%%module%%').join(moduleLabel(reviewItem.module)).split('%%title%%').join(lessonLabel(reviewItem.module, reviewItem.title));
+  }
+  var trackingSend = false;
+  function controlLabel(el) {
+    return ((el && (el.innerText || el.value || (el.getAttribute && el.getAttribute('aria-label')))) || '').replace(/\s+/g, ' ').trim();
+  }
+  function feedbackArea() {
+    var areas = [].filter.call(document.querySelectorAll('textarea'), function (el) {
+      var box = el.getBoundingClientRect();
+      return box.width > 80 && box.height > 40;
+    });
+    if (!areas.length) return null;
+    areas.sort(function (a, b) {
+      var ba = a.getBoundingClientRect();
+      var bb = b.getBoundingClientRect();
+      return (bb.top + bb.height) - (ba.top + ba.height) || (bb.width * bb.height) - (ba.width * ba.height);
+    });
+    return areas[0];
+  }
+  function sendControl(area) {
+    if (!area) return null;
+    var root = area.closest('form, [role="dialog"], .modal, .modal-content') || area.parentElement || document.body;
+    function visible(el) { return !!(el && el.getClientRects().length && !el.disabled); }
+    function inReview(el) { return visible(el) && (root.contains(el) || el === root); }
+    var controls = [].filter.call(root.querySelectorAll('button, input[type="submit"], [role="button"]'), inReview);
+    var english = controls.filter(function (el) { return /^send feedback$/i.test(controlLabel(el)); })[0];
+    if (english) return english;
+    var form = area.closest('form');
+    if (form) {
+      var submit = [].filter.call(form.querySelectorAll('button[type="submit"], input[type="submit"]'), visible)[0];
+      if (submit) return submit;
+    }
+    var areaWidth = area.getBoundingClientRect().width || 0;
+    var after = [].filter.call(root.querySelectorAll('button, input[type="submit"], [role="button"], div'), function (el) {
+      if (!inReview(el)) return false;
+      if (!(area.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)) return false;
+      if (el.querySelector && el.querySelector('textarea, button, input')) return false;
+      return true;
+    });
+    return after.filter(function (el) {
+      var box = el.getBoundingClientRect();
+      var clickable = el.matches('button, input[type="submit"], [role="button"]') || getComputedStyle(el).cursor === 'pointer' || /btn|button/i.test(String(el.className || ''));
+      return clickable && box.width >= Math.max(160, areaWidth * 0.55) && box.height >= 28 && box.height <= 90;
+    })[0] || null;
+  }
+  function reviewScreen() {
+    var area = feedbackArea();
+    var button = sendControl(area);
+    if (!area || !button) return null;
+    return { button: button, area: area };
+  }
+  function visibleNotes(selector, pattern) {
+    return [].filter.call(document.querySelectorAll(selector), function (el) { return el.getClientRects().length; }).map(function (el) { return (el.innerText || '').trim(); }).filter(function (t) { return pattern.test(t); }).join('\n');
+  }
+  function visibleErrors() { return visibleNotes('[role="alert"], .alert-danger, .invalid-feedback, .text-danger', /error|fail|invalid|required|unable|could not|try again/i); }
+  function visibleSuccess() { return visibleNotes('[role="status"], .alert-success, .toast, .Toastify__toast--success', /./); }
+  function sameAssignment(row, item) {
+    return row.student === item.student && row.group === item.group && canonicalModule(row.module) === canonicalModule(item.module) && fold(row.title) === fold(item.title);
+  }
+  function markFeedbackSent(item) {
+    if (!item) return;
+    items.forEach(function (row) {
+      if (row.status === 'Needs feedback' && sameAssignment(row, item)) row.status = 'Reviewed';
+    });
+    if (latest && Array.isArray(latest.roster)) {
+      latest.roster.forEach(function (row) {
+        if (row.student !== item.student || row.group !== item.group || canonicalModule(row.module) !== canonicalModule(item.module)) return;
+        var titles = row.feedbackTitles || [];
+        var id = fold(item.title);
+        var nextTitles = titles.filter(function (title) { return fold(title) !== id && fold(lessonEnglish(row.module, title)) !== id; });
+        if (nextTitles.length !== titles.length) {
+          row.feedbackTitles = nextTitles;
+          if (row.feedback > 0) row.feedback -= 1;
+          row.reviewed = (row.reviewed || 0) + 1;
+        }
+      });
+      latest.items = items;
+    }
+    if (reviewItem && sameAssignment(reviewItem, item)) reviewItem = null;
+    pendingReview = null;
+    saveLocal();
+    render();
+  }
+  function trackSend(item) {
+    if (trackingSend || !item) return;
+    trackingSend = true;
+    var errorsBefore = visibleErrors();
+    var successBefore = visibleSuccess();
+    var goneAt = 0;
+    var started = Date.now();
+    var timer = setInterval(inspect, 200);
+    tickers.add(inspect);
+    function inspect() {
+      var errorsNow = visibleErrors();
+      if (errorsNow && errorsNow !== errorsBefore) { finish('error'); return; }
+      var successNow = visibleSuccess();
+      if (successNow && successNow !== successBefore && !/error|fail|invalid|required|unable|could not|try again/i.test(successNow)) { finish('success'); return; }
+      if (!reviewScreen()) {
+        if (!goneAt) goneAt = Date.now();
+        if (Date.now() - goneAt >= 800) { finish('closed'); return; }
+      } else goneAt = 0;
+      if (Date.now() - started > 20000) finish('timeout');
+    }
+    function finish(outcome) {
+      clearInterval(timer);
+      tickers.delete(inspect);
+      trackingSend = false;
+      if (outcome === 'success' || outcome === 'closed') markFeedbackSent(item);
+    }
+  }
+  document.addEventListener('click', function (event) {
+    if (!pendingReview || trackingSend) return;
+    var screen = reviewScreen();
+    if (!screen) return;
+    var hit = event.target && event.target.closest && event.target.closest('button, input[type="submit"], [role="button"], div');
+    if (!hit || hit.disabled) return;
+    if (hit !== screen.button && !screen.button.contains(hit)) return;
+    trackSend(pendingReview);
+  }, true);
   function render() {
     if (lang === 'en') pack = STR;
     else if (lang === 'ro') pack = RO;
@@ -1581,8 +1715,9 @@
     setText('dlp-kicker', t('kicker'));
     var reviewNote = byId('dlp-review-note');
     if (reviewNote) {
-      reviewNote.hidden = !reviewNotice;
-      reviewNote.textContent = reviewNotice;
+      var sentence = reviewSentence();
+      reviewNote.hidden = !sentence;
+      reviewNote.textContent = sentence;
     }
     if (DBI_SCAN_CHANNEL === 'test') {
       setText('dlp-push-title', t('pushListTitle'));
@@ -1602,6 +1737,8 @@
       }
       setText('dlp-push-help-title', t('pushHelpTitle'));
       for (var helpStep = 1; helpStep <= 6; helpStep++) setText('dlp-push-help-' + helpStep, t('pushHelp' + helpStep));
+      var helpPathNode = byId('dlp-push-help-path');
+      if (helpPathNode) helpPathNode.textContent = t('pushHelpPath') + ' C:\\Users\\johnu\\Downloads\\DBI_Leader_Dashboard_GithubPage\\local-only\\test-bookmark.html';
     }
     setText('dlp-fine', t('fine'));
     setText('dlp-label-modules', t('panelModules'));
