@@ -5,7 +5,7 @@
   'use strict';
   var DBI_SCAN_CHANNEL = 'test';
   // Changes on this test scan that are not in production yet. Add one sentence key in the same edit. Clear this array after Push update promotes those changes. Do not list the TEST banner or the Push update button.
-  var PENDING_PUSH = ['pushItemReview', 'pushItemSent'];
+  var PENDING_PUSH = [];
   if (location.hostname !== 'digitalbibleinstitute.com') {
     window.alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');
     return;
@@ -82,9 +82,10 @@
     pushHelp5: 'After sign-in, on the right side of "Promote tested scan", click Run workflow, then click the green Run workflow in the small menu.',
     pushHelp6: 'Wait until that run shows a green check, about a minute more for GitHub Pages.',
     pushHelp7: 'Click the same good DBI Leader Scan bookmark.',
-    promoteWait: 'Waiting for the good bookmark to update. The test bookmark looks the same. This line changes when the good scan includes the review confirmation.',
-    promoteOk: 'The good bookmark is updated. Click the same DBI Leader Scan bookmark. The test bookmark stays the same.',
-    promoteFail: 'The good bookmark did not update. Sign in on the GitHub page, click Run workflow on the right of Promote tested scan, then click the green Run workflow.',
+    promoteIdle: 'The good bookmark has not been updated yet.',
+    promoteWait: 'Waiting for GitHub. This page will say when the good bookmark has the updates.',
+    promoteOk: 'The good bookmark is updated. Click DBI Leader Scan.',
+    promoteFail: 'Could not check the good bookmark yet.',
     pushHelpPath: 'The test bookmark page on this computer is',
     notSubmittedBtn: 'Not submitted',
     statusFeedback: 'Waiting on you',
@@ -224,9 +225,10 @@
     pushHelp5: 'După autentificare, în dreapta titlului „Promote tested scan”, apăsați Run workflow, apoi apăsați Run workflow verde din meniul mic.',
     pushHelp6: 'Așteptați până când rularea are o bifă verde, apoi încă aproximativ un minut pentru GitHub Pages.',
     pushHelp7: 'Apăsați același marcaj bun DBI Leader Scan.',
-    promoteWait: 'Așteptăm actualizarea marcajului bun. Marcajul de test arată la fel. Acest rând se schimbă când scanarea bună conține confirmarea evaluării.',
-    promoteOk: 'Marcajul bun este actualizat. Apăsați același marcaj DBI Leader Scan. Marcajul de test rămâne la fel.',
-    promoteFail: 'Marcajul bun nu s-a actualizat. Autentificați-vă pe pagina GitHub, apăsați Run workflow în dreapta titlului Promote tested scan, apoi apăsați Run workflow verde.',
+    promoteIdle: 'Marcajul bun nu a fost actualizat încă.',
+    promoteWait: 'Așteptăm GitHub. Această pagină va spune când marcajul bun are actualizările.',
+    promoteOk: 'Marcajul bun este actualizat. Apăsați DBI Leader Scan.',
+    promoteFail: 'Nu am putut verifica încă marcajul bun.',
     pushHelpPath: 'Pagina marcajului de test de pe acest calculator este',
     notSubmittedBtn: 'Netrimisă',
     statusFeedback: 'Așteaptă evaluarea ta',
@@ -1454,26 +1456,29 @@
     runWorkflow.id = 'dlp-run-workflow';
     runWorkflow.textContent = 'Run workflow';
     var promoteUrl = 'https://github.com/nelurs/dbi-leader-dashboard/actions/workflows/promote-scan.yml';
-    var promoteState = '';
-    var promoteStarted = 0;
+    var promoteState = 'idle';
+    var promoteClicked = false;
     var promoteTimer = null;
     function paintPromoteStatus() {
       var node = byId('dlp-promote-status');
       if (!node) return;
-      var text = '';
+      var text = t('promoteIdle');
       var color = '#6a4b00';
-      if (promoteState === 'ok') { text = t('promoteOk'); color = '#0f5132'; }
-      else if (promoteState === 'fail') { text = t('promoteFail'); color = '#842029'; }
-      else if (promoteState === 'wait') { text = t('promoteWait'); color = '#6a4b00'; }
+      var background = '#fff4d6';
+      if (promoteState === 'ok') { text = t('promoteOk'); color = '#0f5132'; background = '#e7f6ee'; }
+      else if (promoteState === 'fail') { text = t('promoteFail'); color = '#842029'; background = '#f8d7da'; }
+      else if (promoteState === 'wait') { text = t('promoteWait'); color = '#6a4b00'; background = '#fff4d6'; }
+      node.hidden = false;
       node.textContent = text;
       node.style.color = color;
-      node.hidden = !text;
+      node.style.background = background;
+      node.style.borderColor = color;
     }
     function goodScanReady(text) {
-      return text.indexOf("var DBI_SCAN_CHANNEL = 'good'") !== -1 && text.indexOf('reviewOpenNote') !== -1 && text.indexOf('function markFeedbackSent') !== -1;
+      return text.indexOf("var DBI_SCAN_CHANNEL = 'good'") !== -1 && text.indexOf('reviewOpenNote') !== -1;
     }
     function checkGoodScan() {
-      fetch('https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=' + Date.now()).then(function (res) {
+      fetch('https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=' + Date.now(), { mode: 'cors', cache: 'no-store' }).then(function (res) {
         if (!res.ok) throw Error('scan');
         return res.text();
       }).then(function (text) {
@@ -1481,22 +1486,21 @@
           promoteState = 'ok';
           if (promoteTimer) clearInterval(promoteTimer);
           promoteTimer = null;
-        } else if (Date.now() - promoteStarted > 4 * 60 * 1000) promoteState = 'fail';
+        } else promoteState = promoteClicked ? 'wait' : 'idle';
         paintPromoteStatus();
       }).catch(function () {
-        if (Date.now() - promoteStarted > 4 * 60 * 1000) promoteState = 'fail';
+        promoteState = 'fail';
         paintPromoteStatus();
       });
     }
     function startPromoteWatch() {
-      promoteState = 'wait';
-      promoteStarted = Date.now();
       paintPromoteStatus();
       checkGoodScan();
-      if (promoteTimer) clearInterval(promoteTimer);
-      promoteTimer = setInterval(checkGoodScan, 15000);
+      if (!promoteTimer) promoteTimer = setInterval(checkGoodScan, 15000);
     }
     function openPromote() {
+      promoteClicked = true;
+      if (promoteState !== 'ok') promoteState = 'wait';
       startPromoteWatch();
       slot.dash.open(promoteUrl, '_blank', 'noopener');
     }
@@ -1536,10 +1540,15 @@
     pushHelp.appendChild(helpPath);
     var promoteStatus = slot.ui.createElement('p');
     promoteStatus.id = 'dlp-promote-status';
-    promoteStatus.hidden = true;
-    promoteStatus.style.fontWeight = '650';
-    pushHelp.appendChild(promoteStatus);
+    promoteStatus.style.margin = '0 0 12px';
+    promoteStatus.style.padding = '14px 16px';
+    promoteStatus.style.border = '3px solid #6a4b00';
+    promoteStatus.style.borderRadius = '12px';
+    promoteStatus.style.fontWeight = '750';
+    promoteStatus.style.fontSize = '1.15rem';
+    pushHelp.insertBefore(promoteStatus, helpSteps);
     panel.insertBefore(pushHelp, pushList.nextSibling);
+    startPromoteWatch();
     testPush.onclick = function () {
       var ok = false;
       try { ok = slot.dash.confirm('Replace the good bookmark with this tested scan?'); } catch (error) { ok = false; }
