@@ -76,11 +76,15 @@
     pushItemSent: 'After you send feedback, that assignment leaves Waiting on you immediately. You do not scan again.',
     pushHelpTitle: 'How to promote',
     pushHelp1: 'Read Updates to push.',
-    pushHelp2: 'Click Push update and confirm "Replace the good bookmark with this tested scan?"',
-    pushHelp3: 'Click Run workflow on the test dashboard. It opens the GitHub Action page.',
-    pushHelp4: 'On that GitHub page, click the Run workflow button. GitHub asks because this page cannot start the action by itself.',
-    pushHelp5: 'Wait about a minute for GitHub Pages.',
-    pushHelp6: 'Click the same good DBI Leader Scan bookmark. Do not drag a new one.',
+    pushHelp2: 'Click Push update and confirm.',
+    pushHelp3: 'Click Run workflow on the test dashboard.',
+    pushHelp4: 'On the GitHub page, if you see Sign in at the top right, click Sign in and sign in as the owner of nelurs/dbi-leader-dashboard. The Run workflow button is hidden until you are signed in. The empty "This workflow has no runs yet" screen means it has not started.',
+    pushHelp5: 'After sign-in, on the right side of "Promote tested scan", click Run workflow, then click the green Run workflow in the small menu.',
+    pushHelp6: 'Wait until that run shows a green check, about a minute more for GitHub Pages.',
+    pushHelp7: 'Click the same good DBI Leader Scan bookmark.',
+    promoteWait: 'Waiting for the good bookmark to update. The test bookmark looks the same. This line changes when the good scan includes the review confirmation.',
+    promoteOk: 'The good bookmark is updated. Click the same DBI Leader Scan bookmark. The test bookmark stays the same.',
+    promoteFail: 'The good bookmark did not update. Sign in on the GitHub page, click Run workflow on the right of Promote tested scan, then click the green Run workflow.',
     pushHelpPath: 'The test bookmark page on this computer is',
     notSubmittedBtn: 'Not submitted',
     statusFeedback: 'Waiting on you',
@@ -214,11 +218,15 @@
     pushItemSent: 'După ce trimiteți feedbackul, tema iese imediat din Așteaptă evaluarea ta. Nu mai scanați.',
     pushHelpTitle: 'Cum publicați',
     pushHelp1: 'Citiți Actualizări de publicat.',
-    pushHelp2: 'Apăsați Push update și confirmați „Replace the good bookmark with this tested scan?”',
-    pushHelp3: 'Apăsați Run workflow pe tabloul de test. Se deschide pagina acțiunii GitHub.',
-    pushHelp4: 'Pe acea pagină GitHub, apăsați butonul Run workflow. GitHub cere acest pas pentru că această pagină nu poate porni acțiunea singură.',
-    pushHelp5: 'Așteptați circa un minut până se actualizează GitHub Pages.',
-    pushHelp6: 'Apăsați același marcaj bun DBI Leader Scan. Nu trageți unul nou.',
+    pushHelp2: 'Apăsați Push update și confirmați.',
+    pushHelp3: 'Apăsați Run workflow pe tabloul de test.',
+    pushHelp4: 'Pe pagina GitHub, dacă vedeți Sign in în dreapta sus, apăsați Sign in și intrați ca proprietarul nelurs/dbi-leader-dashboard. Butonul Run workflow este ascuns până vă autentificați. Ecranul gol „This workflow has no runs yet” înseamnă că acțiunea nu a pornit.',
+    pushHelp5: 'După autentificare, în dreapta titlului „Promote tested scan”, apăsați Run workflow, apoi apăsați Run workflow verde din meniul mic.',
+    pushHelp6: 'Așteptați până când rularea are o bifă verde, apoi încă aproximativ un minut pentru GitHub Pages.',
+    pushHelp7: 'Apăsați același marcaj bun DBI Leader Scan.',
+    promoteWait: 'Așteptăm actualizarea marcajului bun. Marcajul de test arată la fel. Acest rând se schimbă când scanarea bună conține confirmarea evaluării.',
+    promoteOk: 'Marcajul bun este actualizat. Apăsați același marcaj DBI Leader Scan. Marcajul de test rămâne la fel.',
+    promoteFail: 'Marcajul bun nu s-a actualizat. Autentificați-vă pe pagina GitHub, apăsați Run workflow în dreapta titlului Promote tested scan, apoi apăsați Run workflow verde.',
     pushHelpPath: 'Pagina marcajului de test de pe acest calculator este',
     notSubmittedBtn: 'Netrimisă',
     statusFeedback: 'Așteaptă evaluarea ta',
@@ -1446,7 +1454,50 @@
     runWorkflow.id = 'dlp-run-workflow';
     runWorkflow.textContent = 'Run workflow';
     var promoteUrl = 'https://github.com/nelurs/dbi-leader-dashboard/actions/workflows/promote-scan.yml';
+    var promoteState = '';
+    var promoteStarted = 0;
+    var promoteTimer = null;
+    function paintPromoteStatus() {
+      var node = byId('dlp-promote-status');
+      if (!node) return;
+      var text = '';
+      var color = '#6a4b00';
+      if (promoteState === 'ok') { text = t('promoteOk'); color = '#0f5132'; }
+      else if (promoteState === 'fail') { text = t('promoteFail'); color = '#842029'; }
+      else if (promoteState === 'wait') { text = t('promoteWait'); color = '#6a4b00'; }
+      node.textContent = text;
+      node.style.color = color;
+      node.hidden = !text;
+    }
+    function goodScanReady(text) {
+      return text.indexOf("var DBI_SCAN_CHANNEL = 'good'") !== -1 && text.indexOf('reviewOpenNote') !== -1 && text.indexOf('function markFeedbackSent') !== -1;
+    }
+    function checkGoodScan() {
+      fetch('https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=' + Date.now()).then(function (res) {
+        if (!res.ok) throw Error('scan');
+        return res.text();
+      }).then(function (text) {
+        if (goodScanReady(text)) {
+          promoteState = 'ok';
+          if (promoteTimer) clearInterval(promoteTimer);
+          promoteTimer = null;
+        } else if (Date.now() - promoteStarted > 4 * 60 * 1000) promoteState = 'fail';
+        paintPromoteStatus();
+      }).catch(function () {
+        if (Date.now() - promoteStarted > 4 * 60 * 1000) promoteState = 'fail';
+        paintPromoteStatus();
+      });
+    }
+    function startPromoteWatch() {
+      promoteState = 'wait';
+      promoteStarted = Date.now();
+      paintPromoteStatus();
+      checkGoodScan();
+      if (promoteTimer) clearInterval(promoteTimer);
+      promoteTimer = setInterval(checkGoodScan, 15000);
+    }
     function openPromote() {
+      startPromoteWatch();
       slot.dash.open(promoteUrl, '_blank', 'noopener');
     }
     runWorkflow.onclick = openPromote;
@@ -1473,7 +1524,7 @@
     var helpTitle = slot.ui.createElement('h2');
     helpTitle.id = 'dlp-push-help-title';
     var helpSteps = slot.ui.createElement('ol');
-    for (var helpIndex = 1; helpIndex <= 6; helpIndex++) {
+    for (var helpIndex = 1; helpIndex <= 7; helpIndex++) {
       var helpStep = slot.ui.createElement('li');
       helpStep.id = 'dlp-push-help-' + helpIndex;
       helpSteps.appendChild(helpStep);
@@ -1483,6 +1534,11 @@
     var helpPath = slot.ui.createElement('p');
     helpPath.id = 'dlp-push-help-path';
     pushHelp.appendChild(helpPath);
+    var promoteStatus = slot.ui.createElement('p');
+    promoteStatus.id = 'dlp-promote-status';
+    promoteStatus.hidden = true;
+    promoteStatus.style.fontWeight = '650';
+    pushHelp.appendChild(promoteStatus);
     panel.insertBefore(pushHelp, pushList.nextSibling);
     testPush.onclick = function () {
       var ok = false;
@@ -1490,6 +1546,7 @@
       if (!ok) return;
       openPromote();
     };
+    slot.paintPromoteStatus = paintPromoteStatus;
   }
 
   function setText(id, value) { var node = byId(id); if (node) node.textContent = value; }
@@ -1736,7 +1793,8 @@
         });
       }
       setText('dlp-push-help-title', t('pushHelpTitle'));
-      for (var helpStep = 1; helpStep <= 6; helpStep++) setText('dlp-push-help-' + helpStep, t('pushHelp' + helpStep));
+      for (var helpStep = 1; helpStep <= 7; helpStep++) setText('dlp-push-help-' + helpStep, t('pushHelp' + helpStep));
+      if (slot.paintPromoteStatus) slot.paintPromoteStatus();
       var helpPathNode = byId('dlp-push-help-path');
       if (helpPathNode) helpPathNode.textContent = t('pushHelpPath') + ' C:\\Users\\johnu\\Downloads\\DBI_Leader_Dashboard_GithubPage\\local-only\\test-bookmark.html';
     }
