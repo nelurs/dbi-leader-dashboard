@@ -73,6 +73,13 @@
     pushListTitle: 'Updates to push',
     pushListEmpty: 'Nothing new to push.',
     pushItemReview: 'After Review now, the dashboard shows the student, module, and assignment, and says it is open on the assignments tab so you should switch to that tab.',
+    pushHelpTitle: 'How to promote',
+    pushHelp1: 'Read Updates to push.',
+    pushHelp2: 'Click Push update and confirm "Replace the good bookmark with this tested scan?"',
+    pushHelp3: 'Click Run workflow on the test dashboard. It opens the GitHub Action page.',
+    pushHelp4: 'On that GitHub page, click the Run workflow button. GitHub asks because this page cannot start the action by itself.',
+    pushHelp5: 'Wait about a minute for GitHub Pages.',
+    pushHelp6: 'Click the same good DBI Leader Scan bookmark. Do not drag a new one.',
     notSubmittedBtn: 'Not submitted',
     statusFeedback: 'Waiting on you',
     statusMissing: 'Not submitted by the student',
@@ -202,6 +209,13 @@
     pushListTitle: 'Actualizări de publicat',
     pushListEmpty: 'Nimic nou de publicat.',
     pushItemReview: 'După Evaluează acum, tabloul arată studentul, modulul și tema și spune că este deschisă în tabul cu teme, ca să treceți la acel tab.',
+    pushHelpTitle: 'Cum publicați',
+    pushHelp1: 'Citiți Actualizări de publicat.',
+    pushHelp2: 'Apăsați Push update și confirmați „Replace the good bookmark with this tested scan?”',
+    pushHelp3: 'Apăsați Run workflow pe tabloul de test. Se deschide pagina acțiunii GitHub.',
+    pushHelp4: 'Pe acea pagină GitHub, apăsați butonul Run workflow. GitHub cere acest pas pentru că această pagină nu poate porni acțiunea singură.',
+    pushHelp5: 'Așteptați circa un minut până se actualizează GitHub Pages.',
+    pushHelp6: 'Apăsați același marcaj bun DBI Leader Scan. Nu trageți unul nou.',
     notSubmittedBtn: 'Netrimisă',
     statusFeedback: 'Așteaptă evaluarea ta',
     statusMissing: 'Netrimisă de student',
@@ -1410,7 +1424,7 @@
   slot.ui.body.appendChild(panel);
   if (DBI_SCAN_CHANNEL === 'test') {
     var testStyle = slot.ui.createElement('style');
-    testStyle.textContent = '#dlp-test-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;padding:10px 12px;background:#fff4d6;color:#6a4b00;border:2px solid #d08a2e;border-radius:12px;font-weight:650}#dlp-test-banner button{background:#d08a2e;border-color:#d08a2e;color:#fff}#dlp-push-list{margin:0 0 12px;padding:12px 14px;background:#fff;border:1px solid #d08a2e;border-radius:12px}#dlp-push-list h2{font-size:1rem;margin:0 0 8px}#dlp-push-list ul{margin:0;padding-left:1.2rem}';
+    testStyle.textContent = '#dlp-test-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;padding:10px 12px;background:#fff4d6;color:#6a4b00;border:2px solid #d08a2e;border-radius:12px;font-weight:650}#dlp-test-banner button{background:#d08a2e;border-color:#d08a2e;color:#fff}#dlp-push-list,#dlp-push-help{margin:0 0 12px;padding:12px 14px;background:#fff;border:1px solid #d08a2e;border-radius:12px}#dlp-push-list h2,#dlp-push-help h2{font-size:1rem;margin:0 0 8px}#dlp-push-list ul,#dlp-push-help ol{margin:0;padding-left:1.2rem}#dlp-push-help li{margin:0 0 6px}';
     panel.appendChild(testStyle);
     var testBanner = slot.ui.createElement('div');
     testBanner.id = 'dlp-test-banner';
@@ -1422,6 +1436,23 @@
     testPush.textContent = 'Push update';
     testBanner.appendChild(testNote);
     testBanner.appendChild(testPush);
+    var runWorkflow = slot.ui.createElement('button');
+    runWorkflow.type = 'button';
+    runWorkflow.id = 'dlp-run-workflow';
+    runWorkflow.textContent = 'Run workflow';
+    var promoteUrl = 'https://github.com/nelurs/dbi-leader-dashboard/actions/workflows/promote-scan.yml';
+    function openPromote() {
+      slot.dash.open(promoteUrl, '_blank', 'noopener');
+    }
+    runWorkflow.onclick = openPromote;
+    testBanner.appendChild(runWorkflow);
+    var menuRun = slot.ui.createElement('button');
+    menuRun.type = 'button';
+    menuRun.id = 'dlp-run-workflow-menu';
+    menuRun.textContent = 'Run workflow';
+    menuRun.onclick = openPromote;
+    var menu = panel.querySelector('.lang');
+    if (menu) menu.appendChild(menuRun);
     panel.insertBefore(testBanner, panel.firstChild);
     var pushList = slot.ui.createElement('section');
     pushList.id = 'dlp-push-list';
@@ -1432,11 +1463,24 @@
     pushList.appendChild(pushTitle);
     pushList.appendChild(pushItems);
     panel.insertBefore(pushList, testBanner.nextSibling);
+    var pushHelp = slot.ui.createElement('section');
+    pushHelp.id = 'dlp-push-help';
+    var helpTitle = slot.ui.createElement('h2');
+    helpTitle.id = 'dlp-push-help-title';
+    var helpSteps = slot.ui.createElement('ol');
+    for (var helpIndex = 1; helpIndex <= 6; helpIndex++) {
+      var helpStep = slot.ui.createElement('li');
+      helpStep.id = 'dlp-push-help-' + helpIndex;
+      helpSteps.appendChild(helpStep);
+    }
+    pushHelp.appendChild(helpTitle);
+    pushHelp.appendChild(helpSteps);
+    panel.insertBefore(pushHelp, pushList.nextSibling);
     testPush.onclick = function () {
       var ok = false;
       try { ok = slot.dash.confirm('Replace the good bookmark with this tested scan?'); } catch (error) { ok = false; }
       if (!ok) return;
-      slot.dash.open('https://github.com/nelurs/dbi-leader-dashboard/actions/workflows/promote-scan.yml', '_blank', 'noopener');
+      openPromote();
     };
   }
 
@@ -1556,6 +1600,8 @@
           pushHost.appendChild(item);
         });
       }
+      setText('dlp-push-help-title', t('pushHelpTitle'));
+      for (var helpStep = 1; helpStep <= 6; helpStep++) setText('dlp-push-help-' + helpStep, t('pushHelp' + helpStep));
     }
     setText('dlp-fine', t('fine'));
     setText('dlp-label-modules', t('panelModules'));
