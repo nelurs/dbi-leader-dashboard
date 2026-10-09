@@ -50,9 +50,19 @@ There are 4 modules: Prayer, Evangelism, Discipleship, Revival. A count like “
 
 After changing this folder, commit and push to `origin main` so https://nelurs.github.io/dbi-leader-dashboard/ updates. Do not leave dashboard edits only on disk. Never force-push. Never update git config. Never commit secrets.
 
+## Speed secret
+
+The local extension `DBI_Leader_Dashboard_0.3.41` (`scanner.js` `expand`) uses one click, waits until the lesson row is ready, then `delay(350)`. It only retries when that wait fails. A retry is not the normal path.
+
+This bookmark scan was hitting `Retrying Name (2/3)` on ordinary students. `expanded()` required `getClientRects().length`. In a background tab Chrome often reports no layout, so every row looked closed, each student waited 7 seconds, then the scan collapsed and tried again up to 3 times. That is the slowness. The extension stays fast because its scan window is the one doing layout, so the first open succeeds and the retry loop never runs.
+
+`scan.js` must treat a row as open when it contains `div.lesson-item__wrapper` (or a spinner), not only when it has a painted rectangle. `expand` must click once and wait once. Do not loop “Retrying (2/3)” and do not add a second `delay(250)`. Keep the extension’s single `delay(350)` after the row is ready, and `stableTable`’s 600ms settle when changing module or page. Do not rebuild the whole dashboard inside the student loop. `progress()` may write the status line and the hero title only.
+
+Clicking Scan runs in the dashboard tab, so `window.focus()` from the assignments page is ignored and the scan stays throttled. The Scan button must call `opener.focus()` from the dashboard window itself (`slot.dash.Function`) before the walk starts.
+
 ## If this breaks again
 
-- **Scan is slow until the leader clicks the assignments tab.** The dashboard tab took focus, so Chrome throttled timers in the background assignments tab. Look at `focusLeader`, and make sure Scan does not call `dash.focus()`. Do not add `delay()` calls beyond the ones in commit `9caa011`.
+- **Status says “Retrying … (2/3)” or the scan is slow until the assignments tab is clicked.** `expand` grew a retry loop again, or `expanded()` went back to requiring `getClientRects()` only. A background tab has no layout boxes. Also confirm the Scan click focuses `opener` from the dashboard realm. Do not add waits the extension’s success path does not have.
 - **Bookmark click starts scanning immediately.** Something calls `scan()` at the bottom of `scan.js` again. Only the Scan assignments button may call `scan()`.
 - **“Translating the dashboard…” stays up while the button says English.** `setLanguage` set the status before Google Translate returned, and the request never finished. English must return before any `fetch`. `withTimeout(..., 12000)` must still reject and restore the previous language and status.
 - **Lesson titles translate during the walk and the scan slows down.** `lessonLabel` queued Google Translate while `slot.running` was true, or `publishLive` called `render()` on every student. Do not render the full dashboard inside the student loop.

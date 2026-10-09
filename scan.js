@@ -474,8 +474,16 @@
   }
   function progress(message) {
     var counts = result ? ' • ' + result.items.length + ' found so far • ' + result.students + ' rows checked' : '';
+    var line = message + counts;
     var node = byId('dlp-progress');
-    if (node) node.textContent = message + counts;
+    if (node) node.textContent = line;
+    if (!slot.running) return;
+    var title = byId('dlp-hero-title');
+    var brief = byId('dlp-brief');
+    var count = byId('dlp-count');
+    if (title) title.textContent = line;
+    if (brief) brief.textContent = '';
+    if (count && result) count.textContent = String(result.students);
   }
   function waitFor(fn, timeout) {
     timeout = timeout || 15000;
@@ -585,7 +593,10 @@
   function expanded(s) {
     var row = find(s);
     var nextRow = row.nextElementSibling;
-    return nextRow && !rowButton(nextRow) && nextRow.getClientRects().length ? nextRow : null;
+    if (!nextRow || rowButton(nextRow)) return null;
+    if (nextRow.getClientRects().length) return nextRow;
+    if (nextRow.querySelector('div.lesson-item__wrapper, [aria-busy="true"], .spinner-border, .spinner-grow')) return nextRow;
+    return null;
   }
   function explicitEmpty(el) {
     var body = text(el);
@@ -599,31 +610,19 @@
     return el.querySelector('div.lesson-item__wrapper p.assignmentDescription') || explicitEmpty(el) ? el : null;
   }
   function expand(s) {
-    var attempt = 1;
-    function once() {
-      return Promise.resolve().then(function () {
-        check();
-        var ready = readyStudent(s);
-        if (ready) return ready;
-        if (!expanded(s)) {
-          var button = rowButton(find(s));
-          button.scrollIntoView({ block: 'center' });
-          button.click();
-        }
-        return waitFor(function () { return readyStudent(s); }, 7000).then(function () { return delay(350); }).then(function () {
-          var el = readyStudent(s);
-          if (el) return el;
-          throw Error('Student content disappeared.');
-        });
-      }).catch(function (error) {
-        if (slot.cancelled || attempt === 3) throw error;
-        progress('Retrying ' + s.student + ' (' + (attempt + 1) + '/3)');
-        attempt += 1;
-        if (expanded(s)) rowButton(find(s)).click();
-        return waitFor(function () { return !expanded(s); }, 2500).catch(function () {}).then(function () { return delay(250); }).then(once);
-      });
+    check();
+    var ready = readyStudent(s);
+    if (ready) return Promise.resolve(ready);
+    if (!expanded(s)) {
+      var button = rowButton(find(s));
+      button.scrollIntoView({ block: 'center' });
+      button.click();
     }
-    return once();
+    return waitFor(function () { return readyStudent(s); }, 7000).then(function () { return delay(350); }).then(function () {
+      var el = readyStudent(s);
+      if (el) return el;
+      throw Error('Student content did not stay open.');
+    });
   }
   function collapse(s) {
     try {
@@ -1105,6 +1104,7 @@
   function personKey(person) { return person.student + '\t' + person.group; }
   function focusLeader() {
     try { window.focus(); } catch (error) {}
+    try { if (slot.dash && slot.dash.opener) slot.dash.opener.focus(); } catch (error) {}
   }
   function translateOne(text, target) {
     var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(text);
@@ -1790,6 +1790,9 @@
     setText('dlp-warnings', t('cleared'));
     setText('dlp-progress', t('cleared'));
   };
+  try {
+    byId('dlp-scan').addEventListener('click', slot.dash.Function('try{if(window.opener)window.opener.focus()}catch(e){}'));
+  } catch (error) {}
   byId('dlp-scan').onclick = function () {
     if (slot.running) return;
     focusLeader();
