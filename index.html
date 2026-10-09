@@ -5,157 +5,278 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DBI Leader Dashboard</title>
   <style>
-    :root {
-      --ink: #1c2430;
-      --muted: #5c6775;
-      --line: #d9d1c3;
-      --paper: #f6f1e8;
-      --card: #fffdf8;
-      --accent: #1f4e46;
-      --gold: #a9782a;
-    }
+    :root { --ink: #1c2430; --muted: #5c6775; --line: #d9d1c3; --paper: #f6f1e8; --card: #fffdf8; --accent: #1f4e46; --gold: #a9782a; }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top left, #fff 0, transparent 42%),
-        var(--paper);
-      font: 18px/1.5 Georgia, "Palatino Linotype", Palatino, serif;
-    }
-    main {
-      max-width: 42rem;
-      margin: 0 auto;
-      padding: 3rem 1.25rem 4rem;
-    }
-    h1 {
-      margin: 0 0 0.25rem;
-      font-size: 2.4rem;
-      font-weight: normal;
-      letter-spacing: -0.03em;
-    }
-    .subtitle {
-      margin: 0 0 1rem;
-      color: var(--gold);
-      font-style: italic;
-    }
-    .banner {
-      margin: 0 0 1.5rem;
-      padding: 0.9rem 1rem;
-      background: #fff8ea;
-      border: 1px solid var(--gold);
-      color: var(--ink);
-    }
-    .banner strong { font-weight: 600; }
-    .where {
-      margin: 0.8rem 0 0;
-      font: 0.9rem/1.4 system-ui, sans-serif;
-      word-break: break-all;
-    }
-    ol {
-      margin: 0 0 2rem;
-      padding: 0;
-      list-style: none;
-      counter-reset: step;
-    }
-    li {
-      counter-increment: step;
-      margin: 0 0 0.9rem;
-      padding: 0.9rem 1rem 0.9rem 3.4rem;
-      background: var(--card);
-      border: 1px solid var(--line);
-      position: relative;
-    }
-    li::before {
-      content: counter(step);
-      position: absolute;
-      left: 0.85rem;
-      top: 0.85rem;
-      width: 1.7rem;
-      height: 1.7rem;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font: 600 0.95rem/1.7rem system-ui, sans-serif;
-      text-align: center;
-    }
-    .bookmark-wrap {
-      padding: 1.25rem;
-      background: var(--accent);
-      color: #f4efe6;
-    }
+    body { margin: 0; color: var(--ink); background: radial-gradient(circle at top left, #fff 0, transparent 42%), var(--paper); font: 18px/1.5 Georgia, "Palatino Linotype", Palatino, serif; }
+    main { max-width: 42rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .bar { display: flex; justify-content: flex-end; margin-bottom: 0.5rem; }
+    h1 { margin: 0 0 0.25rem; font-size: 2.4rem; font-weight: normal; letter-spacing: -0.03em; }
+    .subtitle { margin: 0 0 1rem; color: var(--gold); font-style: italic; }
+    .banner { margin: 0 0 1.5rem; padding: 0.9rem 1rem; background: #fff8ea; border: 1px solid var(--gold); }
+    ol { margin: 0 0 2rem; padding: 0; list-style: none; counter-reset: step; }
+    li { counter-increment: step; margin: 0 0 0.9rem; padding: 0.9rem 1rem 0.9rem 3.4rem; background: var(--card); border: 1px solid var(--line); position: relative; }
+    li::before { content: counter(step); position: absolute; left: 0.85rem; top: 0.85rem; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--accent); color: #fff; font: 600 0.95rem/1.7rem system-ui, sans-serif; text-align: center; }
+    .bookmark-wrap { padding: 1.25rem; background: var(--accent); color: #f4efe6; }
     .bookmark-wrap p { margin: 0 0 0.8rem; }
-    a.bookmark {
-      display: inline-block;
-      padding: 0.55rem 0.9rem;
-      background: #fffdf8;
-      color: var(--ink);
-      border: 1px dashed var(--gold);
-      text-decoration: none;
-      font: 600 1rem/1.2 system-ui, sans-serif;
-      cursor: grab;
-    }
+    a.bookmark { display: inline-block; padding: 0.55rem 0.9rem; background: #fffdf8; color: var(--ink); border: 1px dashed var(--gold); text-decoration: none; font: 600 1rem/1.2 system-ui, sans-serif; cursor: grab; }
     a.bookmark:hover { border-style: solid; }
-    .hint {
-      margin: 0.8rem 0 0;
-      color: #d7ebe4;
-      font: 0.95rem/1.4 system-ui, sans-serif;
-    }
-    .bookmark-wrap.test {
-      margin-top: 1rem;
-      background: #6a4b00;
-    }
-    .bookmark-wrap.test .hint { color: #ffe7b0; }
-    .ro {
-      margin-top: 2.5rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--line);
-      color: var(--muted);
-    }
-    .ro h2 {
-      margin: 0 0 0.4rem;
-      font-size: 1.15rem;
-      font-weight: normal;
-      color: var(--ink);
-    }
+    .hint, .where { margin: 0.8rem 0 0; color: #d7ebe4; font: 0.95rem/1.4 system-ui, sans-serif; }
+    .where { word-break: break-all; }
+    .langpick { position: relative; }
+    .langpick > button, .langrow button { font: 600 0.95rem/1.2 system-ui, sans-serif; }
+    .langpick > button { background: #fffdf8; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; }
+    .langpanel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; width: min(340px, 86vw); max-height: 420px; overflow: auto; background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 40px rgba(16,40,63,.16); padding: 10px; }
+    .langpanel[hidden] { display: none; }
+    .langpanel input { width: 100%; box-sizing: border-box; margin: 0 0 8px; padding: 8px; font: 1rem system-ui, sans-serif; }
+    .langsec { margin: 10px 4px 4px; font: 700 0.75rem/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .langrow { display: flex; gap: 4px; align-items: center; }
+    .langrow .pick { flex: 1; text-align: start; background: #fff; border: 0; padding: 8px; cursor: pointer; }
+    .langrow.current .pick { background: #e7eef5; font-weight: 700; }
+    .langrow .star { width: 36px; background: #fff; border: 0; cursor: pointer; color: var(--accent); }
+    [dir="rtl"] .bar { justify-content: flex-start; }
+    [dir="rtl"] li { padding: 0.9rem 3.4rem 0.9rem 1rem; }
+    [dir="rtl"] li::before { left: auto; right: 0.85rem; }
   </style>
 </head>
 <body>
   <main>
+    <div class="bar">
+      <div class="langpick">
+        <button type="button" id="lang-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="lang-panel">English</button>
+        <div id="lang-panel" class="langpanel" hidden role="dialog">
+          <input id="lang-search" type="search" autocomplete="off">
+          <div id="lang-list"></div>
+        </div>
+      </div>
+    </div>
     <h1>DBI Leader Dashboard</h1>
-    <p class="subtitle">Make disciples of all the nations.</p>
-    <p class="banner">Keep the bookmark you already use. It loads the good scan. Drag the test bookmark once if you want to try a change. The good bookmark changes only after Push update.</p>
+    <p class="subtitle" id="i-sub">Make disciples of all the nations.</p>
+    <p class="banner" id="i-banner">Drag this bookmark once. The same bookmark keeps working. Click it again about a minute after an update is published.</p>
     <ol>
-      <li>Leave the existing <strong>DBI Leader Scan</strong> bookmark where it is. Drag <strong>DBI Leader Scan TEST</strong> onto the bookmarks bar once.</li>
-      <li>Sign in on digitalbibleinstitute.com as Group leader and open assignments.</li>
-      <li>Click the bookmark you want. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments. The test dashboard is marked TEST and has Push update.</li>
+      <li id="i-s1">Drag DBI Leader Scan onto the bookmarks bar. One drag is enough.</li>
+      <li id="i-s2">Sign in on digitalbibleinstitute.com as Group leader and open assignments.</li>
+      <li id="i-s3">Allow pop-ups for that site, then click the bookmark once. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments.</li>
     </ol>
     <div class="bookmark-wrap">
-      <p>Good bookmark. This is the one you already have:</p>
+      <p id="i-drag">Drag this bookmark to the bookmarks bar:</p>
       <a class="bookmark" id="scan-bookmark" href="#">DBI Leader Scan</a>
-      <p class="hint">This loads the fast scan you approved. It does not change when the test scan changes. Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside the leader tab.</p>
-      <p class="where">https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=timestamp</p>
+      <p class="hint" id="i-hint">This page does not ask for a password. The scan reads the assignments page where you are already signed in. It does not click Send feedback.</p>
+      <p class="where" id="i-where">https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=timestamp</p>
     </div>
-    <div class="bookmark-wrap test">
-      <p>Test bookmark. Drag this once to try changes:</p>
-      <a class="bookmark" id="scan-test-bookmark" href="#">DBI Leader Scan TEST</a>
-      <p class="hint">Use this bookmark to try changes. The opened dashboard shows a TEST banner. The good bookmark changes only after you click Push update on the test dashboard and run that action.</p>
-      <p class="where">https://nelurs.github.io/dbi-leader-dashboard/scan-test.js?t=timestamp</p>
-    </div>
-    <section class="ro" lang="ro">
-      <h2>Pe scurt, în română</h2>
-      <p>Păstrați marcajul bun, <strong>DBI Leader Scan</strong>. El încarcă <strong>https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=timestamp</strong>. Trageți o singură dată marcajul de test, <strong>DBI Leader Scan TEST</strong>. El încarcă o adresă diferită: <strong>https://nelurs.github.io/dbi-leader-dashboard/scan-test.js?t=timestamp</strong>. Tabloul de test arată o bandă TEST. Marcajul bun se schimbă numai după ce apăsați Push update și rulați acea acțiune. Salvarea folderului local nu publică pagina. Conectați-vă ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul ales.</p>
-    </section>
   </main>
   <script>
     (function () {
       var pages = 'https://nelurs.github.io/dbi-leader-dashboard/scan.js';
-      var testPages = 'https://nelurs.github.io/dbi-leader-dashboard/scan-test.js';
-      function loader(src) {
-        return "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var s=document.createElement('script');s.src=" + JSON.stringify(src) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
+      var code = "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var s=document.createElement('script');s.src=" + JSON.stringify(pages) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
+      document.getElementById('scan-bookmark').href = 'javascript:' + code;
+      var KEY = 'dbi-leader-install';
+      var FAV = ['en', 'fa', 'hi', 'ne', 'pt', 'pa', 'ro', 'es', 'ur', 'ru', 'te', 'zh-CN', 'id', 'fr', 'ta', 'ka', 'ar', 'lg', 'vi', 'sw'];
+      var LANGS = [
+        ['af', 'Afrikaans', 'Afrikaans'], ['sq', 'Shqip', 'Albanian'], ['am', 'አማርኛ', 'Amharic'], ['ar', 'العربية', 'Arabic'],
+        ['hy', 'Հայերեն', 'Armenian'], ['az', 'Azərbaycan', 'Azerbaijani'], ['eu', 'Euskara', 'Basque'], ['be', 'Беларуская', 'Belarusian'],
+        ['bn', 'বাংলা', 'Bengali'], ['bs', 'Bosanski', 'Bosnian'], ['bg', 'Български', 'Bulgarian'], ['ca', 'Català', 'Catalan'],
+        ['ceb', 'Cebuano', 'Cebuano'], ['zh-CN', '中文', 'Chinese (Simplified)'], ['zh-TW', '中文（繁體）', 'Chinese (Traditional)'],
+        ['co', 'Corsu', 'Corsican'], ['hr', 'Hrvatski', 'Croatian'], ['cs', 'Čeština', 'Czech'], ['da', 'Dansk', 'Danish'],
+        ['nl', 'Nederlands', 'Dutch'], ['en', 'English', 'English'], ['eo', 'Esperanto', 'Esperanto'], ['et', 'Eesti', 'Estonian'],
+        ['fi', 'Suomi', 'Finnish'], ['fr', 'Français', 'French'], ['fy', 'Frysk', 'Frisian'], ['gl', 'Galego', 'Galician'],
+        ['ka', 'ქართული', 'Georgian'], ['de', 'Deutsch', 'German'], ['el', 'Ελληνικά', 'Greek'], ['gu', 'ગુજરાતી', 'Gujarati'],
+        ['ht', 'Kreyòl ayisyen', 'Haitian Creole'], ['ha', 'Hausa', 'Hausa'], ['haw', 'ʻŌlelo Hawaiʻi', 'Hawaiian'], ['he', 'עברית', 'Hebrew'],
+        ['hi', 'हिन्दी', 'Hindi'], ['hmn', 'Hmoob', 'Hmong'], ['hu', 'Magyar', 'Hungarian'], ['is', 'Íslenska', 'Icelandic'],
+        ['ig', 'Igbo', 'Igbo'], ['id', 'Bahasa Indonesia', 'Indonesian'], ['ga', 'Gaeilge', 'Irish'], ['it', 'Italiano', 'Italian'],
+        ['ja', '日本語', 'Japanese'], ['jv', 'Basa Jawa', 'Javanese'], ['kn', 'ಕನ್ನಡ', 'Kannada'], ['kk', 'Қазақ тілі', 'Kazakh'],
+        ['km', 'ខ្មែរ', 'Khmer'], ['rw', 'Kinyarwanda', 'Kinyarwanda'], ['ko', '한국어', 'Korean'], ['ku', 'Kurdî', 'Kurdish'],
+        ['ky', 'Кыргызча', 'Kyrgyz'], ['lo', 'ລາວ', 'Lao'], ['la', 'Latina', 'Latin'], ['lv', 'Latviešu', 'Latvian'],
+        ['lt', 'Lietuvių', 'Lithuanian'], ['lb', 'Lëtzebuergesch', 'Luxembourgish'], ['mk', 'Македонски', 'Macedonian'], ['mg', 'Malagasy', 'Malagasy'],
+        ['ms', 'Bahasa Melayu', 'Malay'], ['ml', 'മലയാളം', 'Malayalam'], ['mt', 'Malti', 'Maltese'], ['mi', 'Te Reo Māori', 'Māori'],
+        ['mr', 'मराठी', 'Marathi'], ['mn', 'Монгол', 'Mongolian'], ['my', 'မြန်မာ', 'Myanmar'], ['ne', 'नेपाली', 'Nepali'],
+        ['no', 'Norsk', 'Norwegian'], ['ny', 'Chichewa', 'Nyanja'], ['or', 'ଓଡ଼ିଆ', 'Odia'], ['ps', 'پښتو', 'Pashto'],
+        ['fa', 'فارسی', 'Persian'], ['pl', 'Polski', 'Polish'], ['pt', 'Português', 'Portuguese'], ['pa', 'ਪੰਜਾਬੀ', 'Punjabi'],
+        ['ro', 'Română', 'Romanian'], ['ru', 'Русский', 'Russian'], ['sm', 'Gagana Samoa', 'Samoan'], ['gd', 'Gàidhlig', 'Scots Gaelic'],
+        ['sr', 'Српски', 'Serbian'], ['st', 'Sesotho', 'Sesotho'], ['sn', 'ChiShona', 'Shona'], ['sd', 'سنڌي', 'Sindhi'],
+        ['si', 'සිංහල', 'Sinhala'], ['sk', 'Slovenčina', 'Slovak'], ['sl', 'Slovenščina', 'Slovenian'], ['so', 'Soomaali', 'Somali'],
+        ['es', 'Español', 'Spanish'], ['su', 'Basa Sunda', 'Sundanese'], ['sw', 'Kiswahili', 'Swahili'], ['sv', 'Svenska', 'Swedish'],
+        ['tl', 'Filipino', 'Filipino'], ['tg', 'Тоҷикӣ', 'Tajik'], ['ta', 'தமிழ்', 'Tamil'], ['tt', 'Татар', 'Tatar'],
+        ['te', 'తెలుగు', 'Telugu'], ['th', 'ไทย', 'Thai'], ['tr', 'Türkçe', 'Turkish'], ['tk', 'Türkmençe', 'Turkmen'],
+        ['uk', 'Українська', 'Ukrainian'], ['ur', 'اردو', 'Urdu'], ['ug', 'ئۇيغۇرچە', 'Uyghur'], ['uz', 'Oʻzbek', 'Uzbek'],
+        ['vi', 'Tiếng Việt', 'Vietnamese'], ['cy', 'Cymraeg', 'Welsh'], ['xh', 'isiXhosa', 'Xhosa'], ['yi', 'ייִדיש', 'Yiddish'],
+        ['yo', 'Yorùbá', 'Yoruba'], ['zu', 'isiZulu', 'Zulu'], ['lg', 'Luganda', 'Luganda']
+      ];
+      var BY = {};
+      LANGS.forEach(function (row) { BY[row[0]] = { code: row[0], native: row[1], en: row[2] }; });
+      var RTL = { ar: 1, fa: 1, ur: 1, he: 1, ps: 1, sd: 1, yi: 1, ug: 1 };
+      var IDS = ['i-sub', 'i-banner', 'i-s1', 'i-s2', 'i-s3', 'i-drag', 'i-hint', 'ui-fav', 'ui-all', 'ui-search'];
+      var EN = {
+        'i-sub': 'Make disciples of all the nations.',
+        'i-banner': 'Drag this bookmark once. The same bookmark keeps working. Click it again about a minute after an update is published.',
+        'i-s1': 'Drag DBI Leader Scan onto the bookmarks bar. One drag is enough.',
+        'i-s2': 'Sign in on digitalbibleinstitute.com as Group leader and open assignments.',
+        'i-s3': 'Allow pop-ups for that site, then click the bookmark once. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments.',
+        'i-drag': 'Drag this bookmark to the bookmarks bar:',
+        'i-hint': 'This page does not ask for a password. The scan reads the assignments page where you are already signed in. It does not click Send feedback.',
+        'ui-fav': 'Favorites',
+        'ui-all': 'All languages',
+        'ui-search': 'Search languages'
+      };
+      var RO = {
+        'i-sub': 'Faceți ucenici din toate neamurile.',
+        'i-banner': 'Trageți marcajul o singură dată. Același marcaj rămâne bun. Apăsați-l din nou la circa un minut după ce o actualizare este publicată.',
+        'i-s1': 'Trageți DBI Leader Scan pe bara de marcaje. O singură tragere este de ajuns.',
+        'i-s2': 'Conectați-vă pe digitalbibleinstitute.com ca lider de grup și deschideți temele.',
+        'i-s3': 'Permiteți ferestrele pop-up pentru acel site, apoi apăsați marcajul o singură dată. Tabloul se deschide alături și așteaptă. Alegeți limba, apoi apăsați Scanează temele.',
+        'i-drag': 'Trageți acest marcaj pe bara de marcaje:',
+        'i-hint': 'Această pagină nu cere o parolă. Scanarea citește pagina de teme la care sunteți deja conectat. Nu apasă Trimite feedback.',
+        'ui-fav': 'Favorite',
+        'ui-all': 'Toate limbile',
+        'ui-search': 'Căutați limbi'
+      };
+      var lang = 'en';
+      var favorites = FAV.slice();
+      var gen = 0;
+      function read() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
+      function write(extra) {
+        var data = read();
+        data.lang = lang;
+        data.langFavorites = favorites;
+        if (extra) Object.keys(extra).forEach(function (k) { data[k] = extra[k]; });
+        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
       }
-      document.getElementById('scan-bookmark').href = 'javascript:' + loader(pages);
-      document.getElementById('scan-test-bookmark').href = 'javascript:' + loader(testPages);
+      function apply(pack) {
+        IDS.forEach(function (id) {
+          var node = document.getElementById(id);
+          var value = (pack && pack[id]) || EN[id];
+          if (!node) return;
+          if (id === 'ui-search') node.placeholder = value;
+          else node.textContent = value;
+        });
+        document.documentElement.lang = lang;
+        document.documentElement.dir = RTL[lang] ? 'rtl' : 'ltr';
+        var btn = document.getElementById('lang-btn');
+        if (btn && BY[lang]) btn.textContent = BY[lang].native;
+      }
+      function paint() {
+        var q = (document.getElementById('lang-search').value || '').trim().toLowerCase();
+        var list = document.getElementById('lang-list');
+        list.textContent = '';
+        function row(code) {
+          var item = BY[code];
+          if (!item) return null;
+          var blob = (item.native + ' ' + item.en + ' ' + code).toLowerCase();
+          if (q && blob.indexOf(q) === -1) return null;
+          var wrap = document.createElement('div');
+          wrap.className = 'langrow' + (code === lang ? ' current' : '');
+          var pick = document.createElement('button');
+          pick.type = 'button';
+          pick.className = 'pick';
+          pick.textContent = item.native + ' · ' + item.en;
+          pick.onclick = function () { close(); setLanguage(code); };
+          var star = document.createElement('button');
+          star.type = 'button';
+          star.className = 'star';
+          var saved = favorites.indexOf(code) !== -1;
+          star.textContent = saved ? '★' : '☆';
+          star.onclick = function (event) {
+            event.stopPropagation();
+            favorites = saved ? favorites.filter(function (c) { return c !== code; }) : favorites.concat(code);
+            write();
+            paint();
+          };
+          wrap.appendChild(pick);
+          wrap.appendChild(star);
+          return wrap;
+        }
+        function section(titleId, codes) {
+          var head = document.createElement('div');
+          head.className = 'langsec';
+          head.id = titleId;
+          head.textContent = EN[titleId];
+          var any = false;
+          codes.forEach(function (code) {
+            var node = row(code);
+            if (!node) return;
+            if (!any) { list.appendChild(head); any = true; }
+            list.appendChild(node);
+          });
+        }
+        section('ui-fav', favorites);
+        section('ui-all', LANGS.map(function (item) { return item[0]; }).filter(function (code) { return favorites.indexOf(code) === -1; }));
+        apply(lang === 'ro' ? RO : (lang === 'en' ? EN : window.__installPack || EN));
+      }
+      function close() {
+        document.getElementById('lang-panel').hidden = true;
+        document.getElementById('lang-btn').setAttribute('aria-expanded', 'false');
+      }
+      function withTimeout(promise, ms) {
+        return new Promise(function (resolve, reject) {
+          var timer = setTimeout(function () { reject(new Error('timeout')); }, ms);
+          promise.then(function (v) { clearTimeout(timer); resolve(v); }, function (e) { clearTimeout(timer); reject(e); });
+        });
+      }
+      function translate(target) {
+        var keys = IDS.slice();
+        var values = keys.map(function (id) { return EN[id]; });
+        var q = values.join('\n|||\n');
+        var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(q);
+        return withTimeout(fetch(url).then(function (res) {
+          if (!res.ok) throw new Error('translate');
+          return res.json();
+        }).then(function (data) {
+          var text = data[0].map(function (part) { return part[0]; }).join('').trim();
+          var parts = text.split(/\n\|\|\|\n|\n/);
+          var pack = {};
+          if (parts.length < keys.length) throw new Error('short');
+          keys.forEach(function (id, i) { pack[id] = (parts[i] || EN[id]).trim(); });
+          return pack;
+        }), 12000);
+      }
+      function setLanguage(next) {
+        if (!BY[next]) return;
+        lang = next;
+        var mine = ++gen;
+        if (next === 'en') { window.__installPack = EN; apply(EN); write(); paint(); return; }
+        if (next === 'ro') { window.__installPack = RO; apply(RO); write(); paint(); return; }
+        var stored = read();
+        if (stored.i18n && stored.i18n[next]) {
+          window.__installPack = stored.i18n[next];
+          apply(stored.i18n[next]);
+          write();
+          paint();
+          return;
+        }
+        window.__installPack = EN;
+        apply(EN);
+        write();
+        paint();
+        translate(next).then(function (pack) {
+          if (mine !== gen || lang !== next) return;
+          window.__installPack = pack;
+          var box = read();
+          box.i18n = box.i18n || {};
+          box.i18n[next] = pack;
+          write({ i18n: box.i18n });
+          apply(pack);
+          paint();
+        }).catch(function () {
+          if (mine !== gen) return;
+          window.__installPack = EN;
+          apply(EN);
+        });
+      }
+      document.getElementById('lang-btn').onclick = function () {
+        var panel = document.getElementById('lang-panel');
+        var open = panel.hidden;
+        panel.hidden = !open;
+        this.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) { paint(); document.getElementById('lang-search').focus(); }
+      };
+      document.getElementById('lang-search').oninput = paint;
+      document.addEventListener('click', function (event) {
+        if (!event.target.closest('.langpick')) close();
+      });
+      var saved = read();
+      if (Array.isArray(saved.langFavorites) && saved.langFavorites.length) favorites = saved.langFavorites.filter(function (code) { return BY[code]; });
+      paint();
+      if (saved.lang && BY[saved.lang]) setLanguage(saved.lang);
+      else apply(EN);
     })();
   </script>
 </body>

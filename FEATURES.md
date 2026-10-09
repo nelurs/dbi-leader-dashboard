@@ -6,14 +6,15 @@ The fast baseline is `Downloads/DBI_Leader_Dashboard_Prototype` (version 0.3.45)
 
 ## Bookmark
 
-There are two bookmarks. Both are stable `javascript:` loaders. On every click they inject a GitHub Pages script plus `?t=` and the current time.
+The public page offers one bookmark, **DBI Leader Scan**. It requests exactly `https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=` plus the current time. Leave the one already on the bookmarks bar.
 
-- **DBI Leader Scan** requests exactly `https://nelurs.github.io/dbi-leader-dashboard/scan.js?t=` plus the current time. Leave the one already on the bookmarks bar.
-- **DBI Leader Scan TEST** requests exactly `https://nelurs.github.io/dbi-leader-dashboard/scan-test.js?t=` plus the current time. Drag this once. The opened dashboard shows the TEST banner. It does not replace `scan.js`.
+The public install page has the same language list as the dashboard: Favorites first, then every language, with search. English is the source text. Romanian instructions are written by hand. Other languages are translated in the browser after the leader picks one. The page does not stay on a “Translating…” line. The bookmark stays draggable and still loads `scan.js`.
+
+**DBI Leader Scan TEST** is not on the public page. The private page is `C:\Users\johnu\Downloads\DBI_Leader_Dashboard_GithubPage\local-only\test-bookmark.html`. That folder is in `.gitignore`, so GitHub Pages does not publish it. The existing test bookmark already loads `https://nelurs.github.io/dbi-leader-dashboard/scan-test.js?t=` plus the current time. `scan-test.js` matches production `scan.js`, plus the review confirmation below, plus the TEST banner and Push update button only when `DBI_SCAN_CHANNEL === 'test'`.
 
 Folder edits do not publish. Nothing in this folder commits or pushes on save. Production `scan.js` changes only when the user runs the Push update GitHub Action.
 
-`index.html` builds both loaders. `bookmarklet.js` writes the same two loaders. Keep the good loader pointed at `scan.js`.
+`index.html` builds the good loader only. `bookmarklet.js` is that same good loader. Do not put the test URL on the public page.
 
 ## Startup
 
@@ -51,7 +52,9 @@ There are 4 modules: Prayer, Evangelism, Discipleship, Revival. A count like “
 
 Editing this folder does not publish. Do not commit or push unless the leader explicitly says to publish a test or to run Push update. Never push production `scan.js` as a side effect of editing the folder. Experiments belong in `scan-test.js` only. The only test URL is `scan-test.js`. Production `scan.js` changes only when the user runs the Push update GitHub Action.
 
-**Push update** exists only on the test dashboard, behind `var DBI_SCAN_CHANNEL = 'test'` and `if (DBI_SCAN_CHANNEL === 'test')`. Production `scan.js` sets that flag to `'good'`, so it does not show the TEST banner or the button. Clicking Push update asks “Replace the good bookmark with this tested scan?” and then opens the GitHub Actions page for `promote-scan.yml`. That workflow runs only when someone starts it (`workflow_dispatch`). It copies `scan-test.js` over `scan.js` after changing the channel flag to `'good'`, commits, and pushes with the default `GITHUB_TOKEN`. No token is stored in the page. Until that workflow runs, editing or publishing `scan-test.js` does not change `scan.js`. The good bookmark picks up the new `scan.js` on the next click after GitHub Pages rebuilds (about a minute).
+**Push update** exists only on the test dashboard, behind `var DBI_SCAN_CHANNEL = 'test'` and `if (DBI_SCAN_CHANNEL === 'test')`. Production `scan.js` sets that flag to `'good'`, so it does not show the TEST banner or the button. The review confirmation is on the test bookmark until Push update runs. After a successful Review now, the test dashboard shows `%%s1%% · %%module%% · %%title%% is open on the assignments tab. Switch to that tab to see it.` with the student, module, and assignment filled in.
+
+To promote: on the test dashboard click **Push update**, confirm “Replace the good bookmark with this tested scan?”, then on the GitHub Action page click **Run workflow**. Wait about a minute for GitHub Pages. Click the same good bookmark. Do not drag a new one. The workflow copies `scan-test.js` over `scan.js` after setting the channel to `'good'`. The TEST banner stays behind the flag, so the good scan does not show it. The review confirmation is kept. Until that workflow runs, `scan.js` does not change.
 
 Restore the fast scan from `backups/2026-10-09-fast-scan/` if a later edit breaks speed. That folder has the approved `scan.js`, `index.html`, `bookmarklet.js`, `FEATURES.md`, and a README with the clock notes below.
 

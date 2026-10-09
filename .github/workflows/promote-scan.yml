@@ -32,6 +32,10 @@ jobs:
             console.error('test UI must stay behind the channel flag');
             process.exit(1);
           }
+          if (!promoted.includes('reviewOpenNote')) {
+            console.error('promoted scan.js dropped the review confirmation');
+            process.exit(1);
+          }
           fs.writeFileSync('scan.js', promoted);
           NODE
 
