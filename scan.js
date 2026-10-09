@@ -9,10 +9,9 @@
   }
   var slot = window.__dbiLeaderPages || (window.__dbiLeaderPages = {});
   if (slot.running) {
-    if (slot.dash && !slot.dash.closed) slot.dash.focus();
+    try { window.focus(); } catch (error) {}
     return;
   }
-  slot.running = true;
   slot.cancelled = false;
 
   var STR = {
@@ -108,6 +107,7 @@
     scanComplete: 'Scan complete.',
     scanIncomplete: 'Scan incomplete: do not treat an empty work list as all caught up.',
     scanningNotes: 'Scanning…',
+    readyIdle: 'Choose a language, then click Scan assignments. The assignments tab stays in front while the scan runs.',
     cleared: 'Results cleared.',
     coverage: '%%z1%% scan • %%u1%% student rows inspected • %%v1%% already reviewed • %%w1%% unknown items • %%h1%%%%a1%%',
     stateComplete: 'Complete',
@@ -230,6 +230,7 @@
     scanComplete: 'Scanare completă.',
     scanIncomplete: 'Scanare incompletă: o listă goală nu înseamnă că ești la zi.',
     scanningNotes: 'Se scanează…',
+    readyIdle: 'Alege limba, apoi apasă Scanează temele. Tab-ul cu temele rămâne în față în timpul scanării.',
     cleared: 'Rezultate șterse.',
     coverage: 'Scanare %%z1%% • %%u1%% rânduri de studenți verificate • %%v1%% deja evaluate • %%w1%% necunoscute • %%h1%%%%a1%%',
     stateComplete: 'completă',
@@ -347,7 +348,6 @@
   var lessonQueue = {};
   var lessonTimer = 0;
   var lessonGen = 0;
-  var paintAt = 0;
   var items = [];
   var latest = null;
   var busy = false;
@@ -746,7 +746,6 @@
           return job.then(function () {
             progress(module + ' • page ' + logicalPage + ' • checked ' + (at + 1) + '/' + students.length);
             index += 1;
-            publishLive(out);
             return studentLoop();
           });
         }
@@ -836,7 +835,7 @@
   }
   function lessonLabel(module, title, seen) {
     var en = lessonEnglish(module, title, seen);
-    if (!en || lang === 'en' || !isCatalogName(module, en)) return en;
+    if (!en || lang === 'en' || slot.running || !isCatalogName(module, en)) return en;
     var hit = phraseCache[en];
     if (typeof hit === 'string' && hit && fold(hit) !== fold(en)) return en + ' / ' + hit;
     if (typeof hit !== 'string') queueLessonTranslation(en);
@@ -1097,14 +1096,8 @@
     if (phrases) Object.keys(phrases).forEach(function (key) { phraseCache[key] = phrases[key]; });
   }
   function personKey(person) { return person.student + '\t' + person.group; }
-  function publishLive(out) {
-    if (!out || !out.roster || !out.roster.length || !slot.ui) return;
-    items = out.items;
-    latest = out;
-    var now = Date.now();
-    if (now - paintAt < 700) return;
-    paintAt = now;
-    render();
+  function focusLeader() {
+    try { window.focus(); } catch (error) {}
   }
   function translateOne(text, target) {
     var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(text);
@@ -1317,14 +1310,15 @@
     addSection(t('favHeading'), favorites);
     addSection(t('allHeading'), LANGS.map(function (item) { return item[0]; }).filter(function (code) { return favorites.indexOf(code) === -1; }));
   }
-  var dash = window.open('', 'dbi-leader-dashboard');
+  var dash = window.__dbiLeaderDash;
+  if (!dash || dash.closed) dash = window.open('', 'dbi-leader-dashboard');
   if (!dash) {
     window.alert('Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside this tab.');
-    slot.running = false;
     return;
   }
+  window.__dbiLeaderDash = dash;
   slot.dash = dash;
-  try { dash.focus(); } catch (error) {}
+  focusLeader();
   dash.document.open();
   dash.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>DBI Leader Dashboard</title></head><body style="margin:0"></body></html>');
   dash.document.close();
@@ -1759,7 +1753,18 @@
     setText('dlp-warnings', t('cleared'));
     setText('dlp-progress', t('cleared'));
   };
-  byId('dlp-scan').onclick = function () { if (!slot.running) { slot.running = true; scan(); } };
+  byId('dlp-scan').onclick = function () {
+    if (slot.running) return;
+    focusLeader();
+    slot.running = true;
+    render();
+    scan().catch(function (error) {
+      slot.running = false;
+      busy = false;
+      setText('dlp-progress', error.message || 'Scan failed.');
+      render();
+    });
+  };
   ['dlp-search', 'dlp-status', 'dlp-module', 'dlp-group'].forEach(function (id) { byId(id).oninput = render; });
   byId('dlp-student-pick').onchange = render;
   byId('dlp-group-pick').onchange = function () { groupFocus = byId('dlp-group-pick').value; render(); };
@@ -1875,11 +1880,7 @@
   loadStore();
   if (slot.ui) slot.ui.documentElement.dir = RTL[lang] ? 'rtl' : 'ltr';
   render();
-  setText('dlp-progress', latest ? '' : t('scanningNotes'));
+  setText('dlp-progress', t('readyIdle'));
   if (lang !== 'en' && lang !== 'ro' && pack === STR) setLanguage(lang);
-  scan().catch(function (error) {
-    slot.running = false;
-    busy = false;
-    setText('dlp-progress', error.message || 'Scan failed.');
-  });
+  focusLeader();
 })();

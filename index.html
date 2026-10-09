@@ -124,7 +124,7 @@
       <li>Delete the old “DBI Leader Scan” bookmark that came from the GitHub page.</li>
       <li>Drag the bookmark below onto the bookmarks bar.</li>
       <li>Sign in on digitalbibleinstitute.com as Group leader.</li>
-      <li>Open assignments, allow pop-ups for that site, and click the new bookmark once. The scan stays in that tab. The dashboard opens in a new tab beside it.</li>
+      <li>Open assignments, allow pop-ups for that site, and click the new bookmark once. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments. Leave the assignments tab in front while it scans.</li>
     </ol>
     <div class="bookmark-wrap">
       <p>Drag this bookmark to the bookmarks bar:</p>
@@ -134,7 +134,7 @@
     </div>
     <section class="ro" lang="ro">
       <h2>Pe scurt, în română</h2>
-      <p>Acesta este tabloul actualizat. Ștergeți marcajul vechi „DBI Leader Scan” și trageți-l din nou pe acesta: marcajul vechi nu deschide tabul nou. Conectați-vă pe digitalbibleinstitute.com ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul o singură dată. Scanarea rămâne în acel tab, iar tabloul se deschide alături.</p>
+      <p>Acesta este tabloul actualizat. Ștergeți marcajul vechi „DBI Leader Scan” și trageți-l din nou pe acesta. Conectați-vă ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul o singură dată. Tabloul se deschide alături și așteaptă. Alegeți limba, apoi apăsați Scanează temele. Lăsați tabul cu temele în față în timpul scanării.</p>
     </section>
   </main>
   <script>
@@ -142,7 +142,7 @@
       var pages = location.protocol.indexOf('http') === 0
         ? new URL('./scan.js', location.href).href
         : 'https://nelurs.github.io/dbi-leader-dashboard/scan.js';
-      var code = "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var w=window.open('about:blank','dbi-leader-dashboard');if(!w){alert('Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside this tab.');return;}var s=document.createElement('script');s.src=" + JSON.stringify(pages) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
+      var code = "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var w=window.open('about:blank','dbi-leader-dashboard');if(!w){alert('Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside this tab.');return;}window.__dbiLeaderDash=w;window.focus();var s=document.createElement('script');s.src=" + JSON.stringify(pages) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
       document.getElementById('scan-bookmark').href = 'javascript:' + code;
       document.getElementById('scan-src').textContent = pages;
     })();
