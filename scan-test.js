@@ -4,6 +4,8 @@
 (function () {
   'use strict';
   var DBI_SCAN_CHANNEL = 'test';
+  // Changes on this test scan that are not in production yet. Add one sentence key in the same edit. Clear this array after Push update promotes those changes. Do not list the TEST banner or the Push update button.
+  var PENDING_PUSH = ['pushItemReview'];
   if (location.hostname !== 'digitalbibleinstitute.com') {
     window.alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');
     return;
@@ -68,6 +70,9 @@
     openReview: 'Open review',
     opened: 'Opened',
     reviewOpenNote: '%%s1%% · %%module%% · %%title%% is open on the assignments tab. Switch to that tab to see it.',
+    pushListTitle: 'Updates to push',
+    pushListEmpty: 'Nothing new to push.',
+    pushItemReview: 'After Review now, the dashboard shows the student, module, and assignment, and says it is open on the assignments tab so you should switch to that tab.',
     notSubmittedBtn: 'Not submitted',
     statusFeedback: 'Waiting on you',
     statusMissing: 'Not submitted by the student',
@@ -194,6 +199,9 @@
     openReview: 'Deschide evaluarea',
     opened: 'Deschis',
     reviewOpenNote: '%%s1%% · %%module%% · %%title%% este deschisă în tabul cu teme. Treceți la acel tab ca să o vedeți.',
+    pushListTitle: 'Actualizări de publicat',
+    pushListEmpty: 'Nimic nou de publicat.',
+    pushItemReview: 'După Evaluează acum, tabloul arată studentul, modulul și tema și spune că este deschisă în tabul cu teme, ca să treceți la acel tab.',
     notSubmittedBtn: 'Netrimisă',
     statusFeedback: 'Așteaptă evaluarea ta',
     statusMissing: 'Netrimisă de student',
@@ -1402,7 +1410,7 @@
   slot.ui.body.appendChild(panel);
   if (DBI_SCAN_CHANNEL === 'test') {
     var testStyle = slot.ui.createElement('style');
-    testStyle.textContent = '#dlp-test-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;padding:10px 12px;background:#fff4d6;color:#6a4b00;border:2px solid #d08a2e;border-radius:12px;font-weight:650}#dlp-test-banner button{background:#d08a2e;border-color:#d08a2e;color:#fff}';
+    testStyle.textContent = '#dlp-test-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;padding:10px 12px;background:#fff4d6;color:#6a4b00;border:2px solid #d08a2e;border-radius:12px;font-weight:650}#dlp-test-banner button{background:#d08a2e;border-color:#d08a2e;color:#fff}#dlp-push-list{margin:0 0 12px;padding:12px 14px;background:#fff;border:1px solid #d08a2e;border-radius:12px}#dlp-push-list h2{font-size:1rem;margin:0 0 8px}#dlp-push-list ul{margin:0;padding-left:1.2rem}';
     panel.appendChild(testStyle);
     var testBanner = slot.ui.createElement('div');
     testBanner.id = 'dlp-test-banner';
@@ -1415,6 +1423,15 @@
     testBanner.appendChild(testNote);
     testBanner.appendChild(testPush);
     panel.insertBefore(testBanner, panel.firstChild);
+    var pushList = slot.ui.createElement('section');
+    pushList.id = 'dlp-push-list';
+    var pushTitle = slot.ui.createElement('h2');
+    pushTitle.id = 'dlp-push-title';
+    var pushItems = slot.ui.createElement('ul');
+    pushItems.id = 'dlp-push-items';
+    pushList.appendChild(pushTitle);
+    pushList.appendChild(pushItems);
+    panel.insertBefore(pushList, testBanner.nextSibling);
     testPush.onclick = function () {
       var ok = false;
       try { ok = slot.dash.confirm('Replace the good bookmark with this tested scan?'); } catch (error) { ok = false; }
@@ -1522,6 +1539,23 @@
     if (reviewNote) {
       reviewNote.hidden = !reviewNotice;
       reviewNote.textContent = reviewNotice;
+    }
+    if (DBI_SCAN_CHANNEL === 'test') {
+      setText('dlp-push-title', t('pushListTitle'));
+      var pushHost = byId('dlp-push-items');
+      if (pushHost) {
+        pushHost.replaceChildren();
+        var pending = PENDING_PUSH.filter(Boolean);
+        if (!pending.length) {
+          var empty = slot.ui.createElement('li');
+          empty.textContent = t('pushListEmpty');
+          pushHost.appendChild(empty);
+        } else pending.forEach(function (key) {
+          var item = slot.ui.createElement('li');
+          item.textContent = t(key);
+          pushHost.appendChild(item);
+        });
+      }
     }
     setText('dlp-fine', t('fine'));
     setText('dlp-label-modules', t('panelModules'));
