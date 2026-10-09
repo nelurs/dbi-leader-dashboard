@@ -119,22 +119,21 @@
   <main>
     <h1>DBI Leader Dashboard</h1>
     <p class="subtitle">Make disciples of all the nations.</p>
-    <p class="banner">This is the updated dashboard: student and group menus, a language list with saved favorites, translated lesson titles, and a dashboard tab beside the leader account. <strong>Delete the old “DBI Leader Scan” bookmark and drag this one again.</strong> An older bookmark does not open the new tab.</p>
+    <p class="banner">Drag the bookmark once. Each later update is in the scan it loads, so the same bookmark picks it up the next time you click it, about a minute after GitHub Pages rebuilds.</p>
     <ol>
-      <li>Delete the old “DBI Leader Scan” bookmark that came from the GitHub page.</li>
-      <li>Drag the bookmark below onto the bookmarks bar.</li>
+      <li>Drag the bookmark below onto the bookmarks bar. One drag is enough.</li>
       <li>Sign in on digitalbibleinstitute.com as Group leader.</li>
-      <li>Open assignments, allow pop-ups for that site, and click the new bookmark once. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments. Leave the assignments tab in front while it scans.</li>
+      <li>Open assignments, allow pop-ups for that site, and click the bookmark. The dashboard opens beside that tab and waits. Choose a language, then click Scan assignments. Leave the assignments tab in front while it scans.</li>
     </ol>
     <div class="bookmark-wrap">
       <p>Drag this bookmark to the bookmarks bar:</p>
       <a class="bookmark" id="scan-bookmark" href="#">DBI Leader Scan</a>
-      <p class="hint">One bookmark is enough. Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside the leader tab. The line below is the scan this bookmark will load.</p>
+      <p class="hint">One bookmark is enough. A later update of the scan loads the next time you click it. Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside the leader tab.</p>
       <p class="where">This bookmark loads: <span id="scan-src"></span></p>
     </div>
     <section class="ro" lang="ro">
       <h2>Pe scurt, în română</h2>
-      <p>Acesta este tabloul actualizat. Ștergeți marcajul vechi „DBI Leader Scan” și trageți-l din nou pe acesta. Conectați-vă ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul o singură dată. Tabloul se deschide alături și așteaptă. Alegeți limba, apoi apăsați Scanează temele. Lăsați tabul cu temele în față în timpul scanării.</p>
+      <p>Un singur marcaj este de ajuns. La fiecare actualizare, același marcaj încarcă scanarea nouă la următoarea apăsare, la circa un minut după ce pagina GitHub se actualizează. Conectați-vă ca lider de grup, deschideți temele, permiteți ferestrele pop-up și apăsați marcajul. Tabloul se deschide alături și așteaptă. Alegeți limba, apoi apăsați Scanează temele. Lăsați tabul cu temele în față în timpul scanării.</p>
     </section>
   </main>
   <script>
@@ -142,7 +141,7 @@
       var pages = location.protocol.indexOf('http') === 0
         ? new URL('./scan.js', location.href).href
         : 'https://nelurs.github.io/dbi-leader-dashboard/scan.js';
-      var code = "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var w=window.open('about:blank','dbi-leader-dashboard');if(!w){alert('Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside this tab.');return;}window.__dbiLeaderDash=w;window.focus();var s=document.createElement('script');s.src=" + JSON.stringify(pages) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
+      var code = "(function(){var host=location.hostname;if(host!=='digitalbibleinstitute.com'){alert('Open digitalbibleinstitute.com first. Sign in as Group leader, open assignments, then click this bookmark.');return;}var s=document.createElement('script');s.src=" + JSON.stringify(pages) + "+'?t='+Date.now();document.documentElement.appendChild(s);})();";
       document.getElementById('scan-bookmark').href = 'javascript:' + code;
       document.getElementById('scan-src').textContent = pages;
     })();

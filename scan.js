@@ -44,7 +44,9 @@
     missingNoGroup: '%%n1%% unsubmitted assignments have no group name. That follow-up sits with the students.',
     partial: 'This scan is incomplete, so read this as partial. ',
     sideMissing: 'assignments students have not submitted',
-    sideCaught: 'modules with nothing left',
+    sideCaught: 'student checks with nothing left',
+    incompleteTitle: 'This scan did not finish',
+    incompleteNote: 'The walk stopped early. %%q1%%',
     caughtOf: '%%k1%% of %%t1%%',
     cardFeedback: 'Waiting on you',
     cardFeedbackNote: 'students already submitted these',
@@ -167,7 +169,9 @@
     missingNoGroup: '%%n1%% teme netrimise nu au grup. Studenții trebuie să le trimită.',
     partial: 'Scanarea este incompletă, deci privește rezultatul ca parțial. ',
     sideMissing: 'teme netrimise de studenți',
-    sideCaught: 'module fără teme rămase',
+    sideCaught: 'verificări de studenți fără teme rămase',
+    incompleteTitle: 'Scanarea nu s-a terminat',
+    incompleteNote: 'Parcursul s-a oprit înainte de final. %%q1%%',
     caughtOf: '%%k1%% din %%t1%%',
     cardFeedback: 'Așteaptă evaluarea ta',
     cardFeedbackNote: 'studenții au trimis deja',
@@ -359,7 +363,7 @@
   var norm = function (s) { return (s || '').trim().toLowerCase().replace(/[’‘ʼ]/g, "'").replace(/[–—]/g, '-').replace(/\s+/g, ' '); };
   function fold(s) { return norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
   function t(key) { var value = pack[key]; return value == null || value === '' ? STR[key] : value; }
-  var TOKEN = { student: 's1', group: 'g1', n: 'n1', count: 'c1', people: 'p1', ready: 'r1', caught: 'k1', total: 't1', feedback: 'f1', missing: 'm1', state: 'z1', students: 'u1', reviewed: 'v1', unknown: 'w1', when: 'h1', account: 'a1' };
+  var TOKEN = { student: 's1', group: 'g1', n: 'n1', count: 'c1', people: 'p1', ready: 'r1', caught: 'k1', total: 't1', feedback: 'f1', missing: 'm1', state: 'z1', students: 'u1', reviewed: 'v1', unknown: 'w1', when: 'h1', account: 'a1', reason: 'q1' };
   function fill(key, vars) {
     var token = function (name) { return '%%' + (TOKEN[name] || name) + '%%'; };
     var s = t(key);
@@ -754,13 +758,14 @@
       return pageLoop();
     }).catch(function (error) {
       check();
+      out.failedModules.push(module);
       out.warnings.push(module + ': ' + error.message);
     });
   }
   function scan() {
     busy = true;
     slot.cancelled = false;
-    result = { items: [], warnings: [], students: 0, reviewed: 0, unknown: 0, missing: 0, complete: false, emptyModules: [], account: '', roster: [] };
+    result = { items: [], warnings: [], students: 0, reviewed: 0, unknown: 0, missing: 0, complete: false, stopped: false, failedModules: [], emptyModules: [], account: '', roster: [] };
     var out = result;
     var dedup = new Set();
     var opened = document.querySelector('ul.assignments__module-navigator')
@@ -783,8 +788,10 @@
       modules.forEach(function (module) { chain = chain.then(function () { check(); return scanModule(module, out, dedup); }); });
       return chain;
     }).then(function () {
-      out.complete = out.warnings.length === 0;
+      out.complete = !out.stopped && !(out.failedModules && out.failedModules.length);
     }).catch(function (error) {
+      out.stopped = true;
+      out.complete = false;
       out.warnings.push(error.message);
     }).then(function () {
       busy = false;
@@ -1193,7 +1200,20 @@
       });
     });
   }
+  function withTimeout(promise, ms) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { reject(Error('timeout')); }, ms);
+      promise.then(function (value) { clearTimeout(timer); resolve(value); }, function (error) { clearTimeout(timer); reject(error); });
+    });
+  }
   function setLanguage(next) {
+    if (!LANG_BY[next] || next === 'en' && lang === 'en') {
+      if (next === 'en' || lang === 'en') {
+        var stuck = byId('dlp-progress');
+        if (stuck && stuck.textContent === t('translating')) setText('dlp-progress', t('readyIdle'));
+      }
+      if (next !== 'en') return Promise.resolve();
+    }
     if (!LANG_BY[next]) return Promise.resolve();
     if (next === lang && (next === 'en' || (pack && pack !== STR))) return Promise.resolve();
     var snapshot = { lang: lang, pack: pack, phraseCache: phraseCache };
@@ -1205,14 +1225,18 @@
       if (slot.ui) slot.ui.documentElement.dir = 'ltr';
       saveLocal();
       render();
+      var stuckEn = byId('dlp-progress');
+      if (stuckEn && stuckEn.textContent === t('translating')) setText('dlp-progress', t('readyIdle'));
       return Promise.resolve();
     }
     var button = byId('dlp-lang');
     if (button) button.disabled = true;
-    setText('dlp-progress', t('translating'));
+    var priorProgress = byId('dlp-progress') ? byId('dlp-progress').textContent : '';
+    var storedNow = readStore();
+    var needsNetwork = next !== 'ro' && !(storedNow.i18nPacks && storedNow.i18nPacks[next]);
+    if (needsNetwork) setText('dlp-progress', t('translating'));
     var job = next === 'ro' ? Promise.resolve(RO) : Promise.resolve().then(function () {
-      var stored = readStore();
-      if (stored.i18nPacks && stored.i18nPacks[next]) return stored.i18nPacks[next];
+      if (storedNow.i18nPacks && storedNow.i18nPacks[next]) return storedNow.i18nPacks[next];
       return translateCatalog(next).then(function (translated) {
         var box = readStore();
         box.i18nPacks = box.i18nPacks || {};
@@ -1221,7 +1245,7 @@
         return translated;
       });
     });
-    return job.then(function (translated) {
+    return withTimeout(job, 12000).then(function (translated) {
       if (gen !== translateGen) return;
       lang = next;
       pack = translated;
@@ -1232,14 +1256,16 @@
       if (slot.ui) slot.ui.documentElement.dir = RTL[next] ? 'rtl' : 'ltr';
       saveLocal();
       render();
+      var done = byId('dlp-progress');
+      if (done && (done.textContent === t('translating') || done.textContent === STR.translating)) setText('dlp-progress', priorProgress && priorProgress !== STR.translating ? priorProgress : t('readyIdle'));
     }).catch(function () {
       if (gen !== translateGen) return;
       lang = snapshot.lang;
       pack = snapshot.pack;
       phraseCache = snapshot.phraseCache;
       if (slot.ui) slot.ui.documentElement.dir = RTL[lang] ? 'rtl' : 'ltr';
-      setText('dlp-progress', t('translateFail'));
       render();
+      setText('dlp-progress', priorProgress && priorProgress !== STR.translating ? priorProgress : t('translateFail'));
     }).then(function () {
       var langButton = byId('dlp-lang');
       if (langButton) langButton.disabled = false;
@@ -1343,6 +1369,11 @@
     node.textContent = label;
     select.appendChild(node);
   }
+  function scanStopped(scan) {
+    if (!scan) return false;
+    if (scan.stopped) return true;
+    return !!(scan.failedModules && scan.failedModules.length);
+  }
   function leaderBrief(list, roster) {
     var feedback = list.filter(function (x) { return x.status === 'Needs feedback'; });
     var missing = list.filter(function (x) { return x.status !== 'Needs feedback'; });
@@ -1383,7 +1414,13 @@
       var top = Array.from(byGroup.entries()).sort(function (a, b) { return b[1] - a[1]; })[0];
       body += ' ' + (top[0] ? fill('missingGroup', { group: top[0], n: top[1] }) : fill('missingNoGroup', { n: top[1] }));
     }
-    if (latest && !latest.complete) body = t('partial') + body;
+    if (scanStopped(latest)) {
+      var failed = (latest.failedModules || []).join(', ');
+      var warn = (latest.warnings && latest.warnings[0]) || '';
+      var reason = failed && warn && warn.indexOf(failed) === -1 ? failed + ' — ' + warn : (failed || warn);
+      title = t('incompleteTitle');
+      if (reason) body = (body ? body + ' ' : '') + fill('incompleteNote', { reason: reason });
+    }
     return { count: count, title: title, text: body, next: (people[0] && people[0].waiting) || (people[0] ? [people[0].first] : []), side: side };
   }
   function openItem(x) {
@@ -1712,7 +1749,7 @@
     if (latest) {
       var when = latest.complete ? new Date().toLocaleString() : '';
       setText('dlp-coverage', fill('coverage', {
-        state: latest.complete ? t('stateComplete') : t('statePartial'),
+        state: scanStopped(latest) ? t('statePartial') : t('stateComplete'),
         students: latest.students,
         reviewed: latest.reviewed,
         unknown: latest.unknown,
