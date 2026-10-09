@@ -9,7 +9,7 @@
   }
   var slot = window.__dbiLeaderPages || (window.__dbiLeaderPages = {});
   if (slot.running) {
-    if (slot.panel) slot.panel.hidden = false;
+    if (slot.dash && !slot.dash.closed) slot.dash.focus();
     return;
   }
   slot.running = true;
@@ -17,7 +17,16 @@
 
   var STR = {
     subtitle: 'Make disciples of all the nations',
-    lede: 'Menus are translated but assignment titles stay in the original language.',
+    lede: 'Menus follow this language. Lesson titles stay in English, with a translation after / .',
+    langLabel: 'Language',
+    favHeading: 'Favorites',
+    allHeading: 'All languages',
+    langSearch: 'Search languages',
+    translating: 'Translating the dashboard…',
+    translateFail: 'Google Translate did not respond. The dashboard stays in the previous language.',
+    chooseStudent: 'Choose a student',
+    studentsWaiting: 'Students appear here as the scan reads them.',
+    groupsWaiting: 'Groups appear here as the scan reads them.',
     scan: 'Scan assignments',
     cancel: 'Cancel',
     clear: 'Clear results',
@@ -117,7 +126,7 @@
     thStudents: 'Students',
     thBehind: 'Furthest behind',
     studentSearch: 'Search a student',
-    studentPick: 'Type a student name to see their lessons.',
+    studentPick: 'Choose a student to see their lessons.',
     studentNone: 'No student matches that name.',
     studentSubmitted: 'Submitted',
     studentLeft: 'Still to submit',
@@ -130,7 +139,16 @@
   };
   var RO = {
     subtitle: 'Faceți ucenici din toate neamurile',
-    lede: 'Meniurile sunt traduse, dar titlurile temelor rămân în limba originală.',
+    lede: 'Meniurile urmează limba aleasă. Titlurile temelor rămân în engleză, cu traducerea după / .',
+    langLabel: 'Limbă',
+    favHeading: 'Favorite',
+    allHeading: 'Toate limbile',
+    langSearch: 'Caută limbi',
+    translating: 'Se traduc meniurile…',
+    translateFail: 'Google Translate nu a răspuns. Tabloul rămâne în limba anterioară.',
+    chooseStudent: 'Alege un student',
+    studentsWaiting: 'Studenții apar aici pe măsură ce scanarea îi citește.',
+    groupsWaiting: 'Grupurile apar aici pe măsură ce scanarea le citește.',
     scan: 'Scanează temele',
     cancel: 'Anulează',
     clear: 'Șterge rezultatele',
@@ -230,7 +248,7 @@
     thStudents: 'Studenți',
     thBehind: 'Cel mai rămas în urmă',
     studentSearch: 'Caută un student',
-    studentPick: 'Scrie numele unui student ca să vezi temele.',
+    studentPick: 'Alege un student ca să vezi temele.',
     studentNone: 'Niciun student nu se potrivește.',
     studentSubmitted: 'Trimise',
     studentLeft: 'De trimis',
@@ -286,6 +304,50 @@
 
   var lang = 'en';
   var pack = STR;
+  var STORE_KEY = 'dbi-leader-pages-scan';
+  var DBI_FAVORITES = ['en', 'fa', 'hi', 'ne', 'pt', 'pa', 'ro', 'es', 'ur', 'ru', 'te', 'zh-CN', 'id', 'fr', 'ta', 'ka', 'ar', 'lg', 'vi', 'sw'];
+  var LANGS = [
+    ['af', 'Afrikaans', 'Afrikaans'], ['sq', 'Shqip', 'Albanian'], ['am', 'አማርኛ', 'Amharic'], ['ar', 'العربية', 'Arabic'],
+    ['hy', 'Հայերեն', 'Armenian'], ['az', 'Azərbaycan', 'Azerbaijani'], ['eu', 'Euskara', 'Basque'], ['be', 'Беларуская', 'Belarusian'],
+    ['bn', 'বাংলা', 'Bengali'], ['bs', 'Bosanski', 'Bosnian'], ['bg', 'Български', 'Bulgarian'], ['ca', 'Català', 'Catalan'],
+    ['ceb', 'Cebuano', 'Cebuano'], ['zh-CN', '中文', 'Chinese (Simplified)'], ['zh-TW', '中文（繁體）', 'Chinese (Traditional)'],
+    ['co', 'Corsu', 'Corsican'], ['hr', 'Hrvatski', 'Croatian'], ['cs', 'Čeština', 'Czech'], ['da', 'Dansk', 'Danish'],
+    ['nl', 'Nederlands', 'Dutch'], ['en', 'English', 'English'], ['eo', 'Esperanto', 'Esperanto'], ['et', 'Eesti', 'Estonian'],
+    ['fi', 'Suomi', 'Finnish'], ['fr', 'Français', 'French'], ['fy', 'Frysk', 'Frisian'], ['gl', 'Galego', 'Galician'],
+    ['ka', 'ქართული', 'Georgian'], ['de', 'Deutsch', 'German'], ['el', 'Ελληνικά', 'Greek'], ['gu', 'ગુજરાતી', 'Gujarati'],
+    ['ht', 'Kreyòl ayisyen', 'Haitian Creole'], ['ha', 'Hausa', 'Hausa'], ['haw', 'ʻŌlelo Hawaiʻi', 'Hawaiian'], ['he', 'עברית', 'Hebrew'],
+    ['hi', 'हिन्दी', 'Hindi'], ['hmn', 'Hmoob', 'Hmong'], ['hu', 'Magyar', 'Hungarian'], ['is', 'Íslenska', 'Icelandic'],
+    ['ig', 'Igbo', 'Igbo'], ['id', 'Bahasa Indonesia', 'Indonesian'], ['ga', 'Gaeilge', 'Irish'], ['it', 'Italiano', 'Italian'],
+    ['ja', '日本語', 'Japanese'], ['jv', 'Basa Jawa', 'Javanese'], ['kn', 'ಕನ್ನಡ', 'Kannada'], ['kk', 'Қазақ тілі', 'Kazakh'],
+    ['km', 'ខ្មែរ', 'Khmer'], ['rw', 'Kinyarwanda', 'Kinyarwanda'], ['ko', '한국어', 'Korean'], ['ku', 'Kurdî', 'Kurdish'],
+    ['ky', 'Кыргызча', 'Kyrgyz'], ['lo', 'ລາວ', 'Lao'], ['la', 'Latina', 'Latin'], ['lv', 'Latviešu', 'Latvian'],
+    ['lt', 'Lietuvių', 'Lithuanian'], ['lb', 'Lëtzebuergesch', 'Luxembourgish'], ['mk', 'Македонски', 'Macedonian'], ['mg', 'Malagasy', 'Malagasy'],
+    ['ms', 'Bahasa Melayu', 'Malay'], ['ml', 'മലയാളം', 'Malayalam'], ['mt', 'Malti', 'Maltese'], ['mi', 'Te Reo Māori', 'Māori'],
+    ['mr', 'मराठी', 'Marathi'], ['mn', 'Монгол', 'Mongolian'], ['my', 'မြန်မာ', 'Myanmar'], ['ne', 'नेपाली', 'Nepali'],
+    ['no', 'Norsk', 'Norwegian'], ['ny', 'Chichewa', 'Nyanja'], ['or', 'ଓଡ଼ିଆ', 'Odia'], ['ps', 'پښتو', 'Pashto'],
+    ['fa', 'فارسی', 'Persian'], ['pl', 'Polski', 'Polish'], ['pt', 'Português', 'Portuguese'], ['pa', 'ਪੰਜਾਬੀ', 'Punjabi'],
+    ['ro', 'Română', 'Romanian'], ['ru', 'Русский', 'Russian'], ['sm', 'Gagana Samoa', 'Samoan'], ['gd', 'Gàidhlig', 'Scots Gaelic'],
+    ['sr', 'Српски', 'Serbian'], ['st', 'Sesotho', 'Sesotho'], ['sn', 'ChiShona', 'Shona'], ['sd', 'سنڌي', 'Sindhi'],
+    ['si', 'සිංහල', 'Sinhala'], ['sk', 'Slovenčina', 'Slovak'], ['sl', 'Slovenščina', 'Slovenian'], ['so', 'Soomaali', 'Somali'],
+    ['es', 'Español', 'Spanish'], ['su', 'Basa Sunda', 'Sundanese'], ['sw', 'Kiswahili', 'Swahili'], ['sv', 'Svenska', 'Swedish'],
+    ['tl', 'Filipino', 'Filipino'], ['tg', 'Тоҷикӣ', 'Tajik'], ['ta', 'தமிழ்', 'Tamil'], ['tt', 'Татар', 'Tatar'],
+    ['te', 'తెలుగు', 'Telugu'], ['th', 'ไทย', 'Thai'], ['tr', 'Türkçe', 'Turkish'], ['tk', 'Türkmençe', 'Turkmen'],
+    ['uk', 'Українська', 'Ukrainian'], ['ur', 'اردو', 'Urdu'], ['ug', 'ئۇيغۇرچە', 'Uyghur'], ['uz', 'Oʻzbek', 'Uzbek'],
+    ['vi', 'Tiếng Việt', 'Vietnamese'], ['cy', 'Cymraeg', 'Welsh'], ['xh', 'isiXhosa', 'Xhosa'], ['yi', 'ייִדיש', 'Yiddish'],
+    ['yo', 'Yorùbá', 'Yoruba'], ['zu', 'isiZulu', 'Zulu'], ['lg', 'Luganda', 'Luganda']
+  ];
+  var LANG_BY = {};
+  LANGS.forEach(function (row) { LANG_BY[row[0]] = { code: row[0], native: row[1], en: row[2] }; });
+  var RTL = { ar: 1, fa: 1, ur: 1, he: 1, ps: 1, sd: 1, yi: 1, ug: 1 };
+  var favorites = DBI_FAVORITES.slice();
+  var phraseCache = {};
+  var translateGen = 0;
+  var lessonPending = {};
+  var lessonFailed = {};
+  var lessonQueue = {};
+  var lessonTimer = 0;
+  var lessonGen = 0;
+  var paintAt = 0;
   var items = [];
   var latest = null;
   var busy = false;
@@ -408,7 +470,7 @@
   }
   function progress(message) {
     var counts = result ? ' • ' + result.items.length + ' found so far • ' + result.students + ' rows checked' : '';
-    var node = document.getElementById('dlp-progress');
+    var node = byId('dlp-progress');
     if (node) node.textContent = message + counts;
   }
   function waitFor(fn, timeout) {
@@ -684,6 +746,7 @@
           return job.then(function () {
             progress(module + ' • page ' + logicalPage + ' • checked ' + (at + 1) + '/' + students.length);
             index += 1;
+            publishLive(out);
             return studentLoop();
           });
         }
@@ -732,7 +795,7 @@
       latest = out;
       saveLocal();
       render();
-      var progressNode = document.getElementById('dlp-progress');
+      var progressNode = byId('dlp-progress');
       if (progressNode) progressNode.textContent = out.complete ? t('scanComplete') : t('scanIncomplete');
     });
   }
@@ -771,7 +834,14 @@
     }
     return englishFor(module, title) || String(title || '');
   }
-  function lessonLabel(module, title, seen) { return lessonEnglish(module, title, seen); }
+  function lessonLabel(module, title, seen) {
+    var en = lessonEnglish(module, title, seen);
+    if (!en || lang === 'en' || !isCatalogName(module, en)) return en;
+    var hit = phraseCache[en];
+    if (typeof hit === 'string' && hit && fold(hit) !== fold(en)) return en + ' / ' + hit;
+    if (typeof hit !== 'string') queueLessonTranslation(en);
+    return en;
+  }
   function curriculumOrder(module) {
     var lessons = [];
     var slots = [];
@@ -882,10 +952,10 @@
     return out;
   }
   function filtered() {
-    var q = (document.getElementById('dlp-search').value || '').toLowerCase();
-    var status = document.getElementById('dlp-status').value;
-    var moduleValue = document.getElementById('dlp-module').value;
-    var groupValue = document.getElementById('dlp-group').value;
+    var q = ((byId('dlp-search') && byId('dlp-search').value) || '').toLowerCase();
+    var status = byId('dlp-status').value;
+    var moduleValue = byId('dlp-module').value;
+    var groupValue = byId('dlp-group').value;
     var source = status === 'Reviewed' ? reviewedRows() : (status ? shownItems() : shownItems().concat(reviewedRows()));
     return sortWork(source.filter(function (x) {
       return (!status || x.status === status) &&
@@ -905,7 +975,7 @@
       person.reviewed += row.reviewed || 0;
       person.modules.push(row);
     });
-    if (map.size) return [].slice.call(map.values());
+    if (map.size) return Array.from(map.values());
     var fallback = new Map();
     items.forEach(function (x) {
       var id = x.student + '|' + x.group;
@@ -913,7 +983,7 @@
       if (x.status === 'Needs feedback') fallback.get(id).feedback++;
       else fallback.get(id).missing++;
     });
-    return [].slice.call(fallback.values());
+    return Array.from(fallback.values());
   }
   function chosenStudents(people, qStudent) {
     if (!qStudent) return [];
@@ -956,7 +1026,7 @@
     }));
     var blob = new Blob(['\ufeff' + lines.map(function (line) { return line.map(function (value) { return quote(safe(value)); }).join(','); }).join('\r\n')], { type: 'text/csv;charset=utf-8' });
     var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
+    var link = slot.ui.createElement('a');
     link.href = url;
     link.download = filename;
     link.click();
@@ -1006,23 +1076,275 @@
     });
   }
 
+  function byId(id) { return slot.ui ? slot.ui.getElementById(id) : null; }
+  function readStore() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (error) { return {}; }
+  }
+  function writeStore(data) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (error) {}
+  }
+  function loadStore() {
+    var data = readStore();
+    if (data.lang && LANG_BY[data.lang]) lang = data.lang;
+    if (Array.isArray(data.langFavorites) && data.langFavorites.length) favorites = data.langFavorites.filter(function (code) { return LANG_BY[code]; });
+    if (Array.isArray(data.items)) items = data.items;
+    if (data.latest && typeof data.latest === 'object') { latest = data.latest; delete latest.account; }
+    if (lang === 'en') pack = STR;
+    else if (lang === 'ro') pack = RO;
+    else if (data.i18nPacks && data.i18nPacks[lang]) pack = data.i18nPacks[lang];
+    phraseCache = {};
+    var phrases = data.phrasePacks && data.phrasePacks[lang];
+    if (phrases) Object.keys(phrases).forEach(function (key) { phraseCache[key] = phrases[key]; });
+  }
+  function personKey(person) { return person.student + '\t' + person.group; }
+  function publishLive(out) {
+    if (!out || !out.roster || !out.roster.length || !slot.ui) return;
+    items = out.items;
+    latest = out;
+    var now = Date.now();
+    if (now - paintAt < 700) return;
+    paintAt = now;
+    render();
+  }
+  function translateOne(text, target) {
+    var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(text);
+    return fetch(url).then(function (res) {
+      if (!res.ok) throw Error('translate');
+      return res.json();
+    }).then(function (data) { return data[0].map(function (part) { return part[0]; }).join('').trim(); });
+  }
+  function translateBatch(texts, target) {
+    if (texts.length === 1) return translateOne(texts[0], target).then(function (text) { return [text]; });
+    var q = texts.join('\n|||\n');
+    var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(q);
+    return fetch(url).then(function (res) {
+      if (!res.ok) throw Error('translate');
+      return res.json();
+    }).then(function (data) {
+      var parts = data[0].map(function (part) { return part[0]; }).join('').split(/\n?\s*\|\|\|\s*\n?/).map(function (part) { return part.trim(); });
+      if (parts.length === texts.length) return parts;
+      var chain = Promise.resolve([]);
+      texts.forEach(function (text) {
+        chain = chain.then(function (list) { return translateOne(text, target).then(function (hit) { list.push(hit); return list; }); });
+      });
+      return chain;
+    });
+  }
+  function translateCatalog(target) {
+    var keys = Object.keys(STR);
+    var values = keys.map(function (key) { return STR[key]; });
+    var out = {};
+    var chain = Promise.resolve();
+    for (var i = 0; i < values.length; i += 8) {
+      (function (start) {
+        chain = chain.then(function () {
+          var slice = values.slice(start, start + 8);
+          return translateBatch(slice, target).then(function (translated) {
+            slice.forEach(function (source, index) { out[keys[start + index]] = translated[index] || source; });
+          });
+        });
+      })(i);
+    }
+    return chain.then(function () { return out; });
+  }
+  function queueLessonTranslation(en) {
+    if (!en || lang === 'en' || phraseCache[en]) return;
+    var key = lang + '\n' + en;
+    if (lessonPending[key] || lessonFailed[key]) return;
+    lessonQueue[en] = true;
+    clearTimeout(lessonTimer);
+    lessonTimer = setTimeout(flushLessonTranslations, 40);
+  }
+  function flushLessonTranslations() {
+    var target = lang;
+    var gen = ++lessonGen;
+    var texts = Object.keys(lessonQueue).filter(function (text) { return !phraseCache[text]; });
+    lessonQueue = {};
+    if (!texts.length || target === 'en') return;
+    texts.forEach(function (text) { lessonPending[target + '\n' + text] = true; });
+    var stored = readStore();
+    stored.phrasePacks = stored.phrasePacks || {};
+    var bag = {};
+    var prior = stored.phrasePacks[target] || {};
+    Object.keys(prior).forEach(function (key) { bag[key] = prior[key]; });
+    Object.keys(phraseCache).forEach(function (key) { bag[key] = phraseCache[key]; });
+    var missing = texts.filter(function (text) { return !bag[text]; });
+    var chain = Promise.resolve();
+    for (var i = 0; i < missing.length; i += 8) {
+      (function (start) {
+        chain = chain.then(function () {
+          var slice = missing.slice(start, start + 8);
+          return translateBatch(slice, target).then(function (translated) {
+            slice.forEach(function (source, index) { bag[source] = translated[index] || source; });
+          });
+        });
+      })(i);
+    }
+    chain.then(function () {
+      texts.forEach(function (text) { if (!bag[text]) bag[text] = text; });
+      if (gen !== lessonGen || lang !== target) {
+        texts.forEach(function (text) { delete lessonPending[target + '\n' + text]; });
+        return;
+      }
+      phraseCache = bag;
+      var fresh = readStore();
+      fresh.phrasePacks = fresh.phrasePacks || {};
+      fresh.phrasePacks[target] = bag;
+      writeStore(fresh);
+      texts.forEach(function (text) { delete lessonPending[target + '\n' + text]; });
+      render();
+    }).catch(function () {
+      texts.forEach(function (text) {
+        delete lessonPending[target + '\n' + text];
+        lessonFailed[target + '\n' + text] = true;
+      });
+    });
+  }
+  function setLanguage(next) {
+    if (!LANG_BY[next]) return Promise.resolve();
+    if (next === lang && (next === 'en' || (pack && pack !== STR))) return Promise.resolve();
+    var snapshot = { lang: lang, pack: pack, phraseCache: phraseCache };
+    var gen = ++translateGen;
+    if (next === 'en') {
+      lang = 'en';
+      pack = STR;
+      phraseCache = {};
+      if (slot.ui) slot.ui.documentElement.dir = 'ltr';
+      saveLocal();
+      render();
+      return Promise.resolve();
+    }
+    var button = byId('dlp-lang');
+    if (button) button.disabled = true;
+    setText('dlp-progress', t('translating'));
+    var job = next === 'ro' ? Promise.resolve(RO) : Promise.resolve().then(function () {
+      var stored = readStore();
+      if (stored.i18nPacks && stored.i18nPacks[next]) return stored.i18nPacks[next];
+      return translateCatalog(next).then(function (translated) {
+        var box = readStore();
+        box.i18nPacks = box.i18nPacks || {};
+        box.i18nPacks[next] = translated;
+        writeStore(box);
+        return translated;
+      });
+    });
+    return job.then(function (translated) {
+      if (gen !== translateGen) return;
+      lang = next;
+      pack = translated;
+      var store = readStore();
+      phraseCache = {};
+      var phrases = store.phrasePacks && store.phrasePacks[next];
+      if (phrases) Object.keys(phrases).forEach(function (key) { phraseCache[key] = phrases[key]; });
+      if (slot.ui) slot.ui.documentElement.dir = RTL[next] ? 'rtl' : 'ltr';
+      saveLocal();
+      render();
+    }).catch(function () {
+      if (gen !== translateGen) return;
+      lang = snapshot.lang;
+      pack = snapshot.pack;
+      phraseCache = snapshot.phraseCache;
+      if (slot.ui) slot.ui.documentElement.dir = RTL[lang] ? 'rtl' : 'ltr';
+      setText('dlp-progress', t('translateFail'));
+      render();
+    }).then(function () {
+      var langButton = byId('dlp-lang');
+      if (langButton) langButton.disabled = false;
+    });
+  }
+  function langCaption(code) {
+    var item = LANG_BY[code];
+    if (!item) return code;
+    return item.native.toLowerCase() === item.en.toLowerCase() ? item.native : item.native + ' (' + item.en + ')';
+  }
+  function paintLangButton() {
+    var item = LANG_BY[lang] || { native: 'English' };
+    var button = byId('dlp-lang');
+    if (!button) return;
+    button.textContent = item.native;
+    button.setAttribute('aria-label', t('langLabel'));
+  }
+  function closeLangPanel() {
+    var panelNode = byId('dlp-lang-panel');
+    var button = byId('dlp-lang');
+    if (panelNode) panelNode.hidden = true;
+    if (button) button.setAttribute('aria-expanded', 'false');
+  }
+  function langRow(code) {
+    var row = slot.ui.createElement('div');
+    row.className = 'langrow' + (code === lang ? ' current' : '');
+    var pick = slot.ui.createElement('button');
+    pick.type = 'button';
+    pick.className = 'ghost pick';
+    pick.textContent = langCaption(code);
+    pick.onclick = function () { closeLangPanel(); setLanguage(code); };
+    var star = slot.ui.createElement('button');
+    star.type = 'button';
+    star.className = 'ghost star';
+    var saved = favorites.indexOf(code) !== -1;
+    star.textContent = saved ? '★' : '☆';
+    star.setAttribute('aria-label', saved ? 'Remove from favorites' : 'Add to favorites');
+    star.onclick = function (event) {
+      event.stopPropagation();
+      favorites = saved ? favorites.filter(function (item) { return item !== code; }) : favorites.concat(code);
+      saveLocal();
+      paintLangPanel();
+    };
+    row.appendChild(pick);
+    row.appendChild(star);
+    return row;
+  }
+  function paintLangPanel() {
+    var search = byId('dlp-lang-search');
+    var q = search ? search.value.trim().toLowerCase() : '';
+    var list = byId('dlp-lang-list');
+    if (!list) return;
+    list.replaceChildren();
+    function matches(code) {
+      var item = LANG_BY[code];
+      if (!item) return false;
+      return !q || item.native.toLowerCase().indexOf(q) !== -1 || item.en.toLowerCase().indexOf(q) !== -1 || code.toLowerCase().indexOf(q) !== -1;
+    }
+    function addSection(title, codes) {
+      var shown = codes.filter(matches);
+      if (!shown.length) return;
+      var heading = slot.ui.createElement('div');
+      heading.className = 'langsec';
+      heading.textContent = title;
+      list.appendChild(heading);
+      shown.forEach(function (code) { list.appendChild(langRow(code)); });
+    }
+    addSection(t('favHeading'), favorites);
+    addSection(t('allHeading'), LANGS.map(function (item) { return item[0]; }).filter(function (code) { return favorites.indexOf(code) === -1; }));
+  }
+  var dash = window.open('', 'dbi-leader-dashboard');
+  if (!dash) {
+    window.alert('Allow pop-ups for digitalbibleinstitute.com so the dashboard can open beside this tab.');
+    slot.running = false;
+    return;
+  }
+  slot.dash = dash;
+  try { dash.focus(); } catch (error) {}
+  dash.document.open();
+  dash.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>DBI Leader Dashboard</title></head><body style="margin:0"></body></html>');
+  dash.document.close();
+  slot.ui = dash.document;
   var old = document.getElementById('dbi-leader-dash');
   if (old) old.remove();
-  var panel = document.createElement('aside');
+  var panel = slot.ui.createElement('aside');
   panel.id = 'dbi-leader-dash';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-label', 'DBI Leader Dashboard');
   slot.panel = panel;
-  var style = document.createElement('style');
-  style.textContent = '#dbi-leader-dash{position:fixed;inset:12px;z-index:2147483646;overflow:auto;background:#eef3f8;color:#17304b;border-radius:16px;box-shadow:0 18px 50px rgba(16,40,63,.28);font:15px/1.45 "Segoe UI",system-ui,sans-serif;padding:18px 20px 28px}#dbi-leader-dash.tucked{inset:auto 12px 12px 12px;max-height:4.6rem;overflow:hidden}#dbi-leader-dash h1{margin:0;font-size:1.6rem}#dbi-leader-dash h2{margin:0;font-size:1.35rem}#dbi-leader-dash button,#dbi-leader-dash input,#dbi-leader-dash select{font:inherit;padding:8px 10px;margin:4px;border:1px solid #c5d3e0;border-radius:8px;background:#fff;color:#17304b}#dbi-leader-dash button{background:#174c78;color:#fff;cursor:pointer;border-color:#174c78;font-weight:650}#dbi-leader-dash button.ghost{background:#fff;color:#174c78}#dbi-leader-dash button:disabled{opacity:.5}#dbi-leader-dash .top{display:flex;justify-content:space-between;gap:16px;align-items:flex-end}#dbi-leader-dash .lede,#dbi-leader-dash .fine{color:#5c7286}#dbi-leader-dash .hero{display:grid;grid-template-columns:1.5fr .7fr;gap:18px;background:linear-gradient(145deg,#10283f,#1a5278 70%,#2a6f73);color:#fff;border-radius:16px;padding:20px;margin:10px 0}#dbi-leader-dash .hero .eyebrow{color:#b7d4ea;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}#dbi-leader-dash .hero-count{font-size:3rem;font-weight:720;line-height:.9;margin:4px 0}#dbi-leader-dash #dlp-brief{color:#d5e6f2}#dbi-leader-dash #dlp-side p{margin:0 0 8px;background:rgba(255,255,255,.12);border-radius:12px;padding:12px}#dbi-leader-dash .next-card{display:flex;justify-content:space-between;gap:12px;background:#fff;color:#17304b;border-radius:12px;padding:12px;margin-top:8px}#dbi-leader-dash #dlp-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}#dbi-leader-dash #dlp-cards article{background:#fff;border-radius:12px;padding:12px}#dbi-leader-dash #dlp-cards strong{display:block;font-size:1.4rem}#dbi-leader-dash details{background:#fff;border-radius:12px;margin:10px 0}#dbi-leader-dash summary{cursor:pointer;padding:12px 14px;font-weight:700}#dbi-leader-dash .body{padding:0 14px 14px}#dbi-leader-dash table{width:100%;border-collapse:collapse}#dbi-leader-dash td,#dbi-leader-dash th{padding:8px;text-align:left;border-bottom:1px solid #e4ebf2;vertical-align:top}#dbi-leader-dash th{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#5c7286}#dbi-leader-dash .bar{display:flex;height:12px;background:#e6eef5;border-radius:7px;overflow:hidden;margin:6px 0}#dbi-leader-dash .you{background:#174c78;height:100%}#dbi-leader-dash .them{background:#d08a2e;height:100%}#dbi-leader-dash .pill{float:right;background:#e7eef5;color:#174c78;border-radius:999px;padding:2px 8px}#dbi-leader-dash .lang button.on{background:#e7eef5;color:#174c78}@media(max-width:800px){#dbi-leader-dash .hero,#dbi-leader-dash .top{display:block}#dbi-leader-dash #dlp-cards{grid-template-columns:1fr 1fr}}';
+  var style = slot.ui.createElement('style');
+  style.textContent = '#dbi-leader-dash{min-height:100vh;overflow:auto;background:#eef3f8;color:#17304b;font:15px/1.45 "Segoe UI",system-ui,sans-serif;padding:18px 20px 28px}#dbi-leader-dash h1{margin:0;font-size:1.6rem}#dbi-leader-dash h2{margin:0;font-size:1.35rem}#dbi-leader-dash button,#dbi-leader-dash input,#dbi-leader-dash select{font:inherit;padding:8px 10px;margin:4px;border:1px solid #c5d3e0;border-radius:8px;background:#fff;color:#17304b}#dbi-leader-dash button{background:#174c78;color:#fff;cursor:pointer;border-color:#174c78;font-weight:650}#dbi-leader-dash button.ghost{background:#fff;color:#174c78}#dbi-leader-dash button:disabled{opacity:.5}#dbi-leader-dash .top{display:flex;justify-content:space-between;gap:16px;align-items:flex-end}#dbi-leader-dash .lede,#dbi-leader-dash .fine{color:#5c7286}#dbi-leader-dash .hero{display:grid;grid-template-columns:1.5fr .7fr;gap:18px;background:linear-gradient(145deg,#10283f,#1a5278 70%,#2a6f73);color:#fff;border-radius:16px;padding:20px;margin:10px 0}#dbi-leader-dash .hero .eyebrow{color:#b7d4ea;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}#dbi-leader-dash .hero-count{font-size:3rem;font-weight:720;line-height:.9;margin:4px 0}#dbi-leader-dash #dlp-brief{color:#d5e6f2}#dbi-leader-dash #dlp-side p{margin:0 0 8px;background:rgba(255,255,255,.12);border-radius:12px;padding:12px}#dbi-leader-dash .next-card{display:flex;justify-content:space-between;gap:12px;background:#fff;color:#17304b;border-radius:12px;padding:12px;margin-top:8px}#dbi-leader-dash #dlp-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}#dbi-leader-dash #dlp-cards article{background:#fff;border-radius:12px;padding:12px}#dbi-leader-dash #dlp-cards strong{display:block;font-size:1.4rem}#dbi-leader-dash details{background:#fff;border-radius:12px;margin:10px 0}#dbi-leader-dash summary{cursor:pointer;padding:12px 14px;font-weight:700}#dbi-leader-dash .body{padding:0 14px 14px}#dbi-leader-dash table{width:100%;border-collapse:collapse}#dbi-leader-dash td,#dbi-leader-dash th{padding:8px;text-align:left;border-bottom:1px solid #e4ebf2;vertical-align:top}#dbi-leader-dash th{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#5c7286}#dbi-leader-dash .bar{display:flex;height:12px;background:#e6eef5;border-radius:7px;overflow:hidden;margin:6px 0}#dbi-leader-dash .you{background:#174c78;height:100%}#dbi-leader-dash .them{background:#d08a2e;height:100%}#dbi-leader-dash .pill{float:right;background:#e7eef5;color:#174c78;border-radius:999px;padding:2px 8px}#dbi-leader-dash .langpick{position:relative;display:inline-block}#dbi-leader-dash .langpanel{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:min(340px,80vw);max-height:420px;overflow:auto;background:#fff;color:#17304b;border:1px solid #c5d3e0;border-radius:14px;box-shadow:0 16px 40px rgba(16,40,63,.16);padding:10px}#dbi-leader-dash .langpanel input{width:100%;box-sizing:border-box;margin:0 0 8px}#dbi-leader-dash .langsec{margin:10px 4px 4px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5c7286}#dbi-leader-dash .langrow{display:flex;align-items:center;gap:4px}#dbi-leader-dash .langrow .pick{flex:1;text-align:left;background:#fff;color:#17304b;border-color:transparent;font-weight:500}#dbi-leader-dash .langrow.current .pick{background:#e7eef5;color:#174c78;font-weight:700}#dbi-leader-dash .langrow .star{width:36px;background:#fff;color:#174c78;border-color:transparent;padding:8px}@media(max-width:800px){#dbi-leader-dash .hero,#dbi-leader-dash .top{display:block}#dbi-leader-dash #dlp-cards{grid-template-columns:1fr 1fr}}';
   panel.appendChild(style);
-  panel.insertAdjacentHTML('beforeend', '<div class="top"><div><h1>DBI Leader Dashboard</h1><p id="dlp-subtitle"></p><p class="lede" id="dlp-lede"></p></div><div class="lang"><button type="button" id="dlp-en" class="ghost">English</button><button type="button" id="dlp-ro" class="ghost">Română</button><button type="button" id="dlp-scan"></button><button type="button" id="dlp-cancel" class="ghost" disabled></button><button type="button" id="dlp-clear" class="ghost"></button><button type="button" id="dlp-close" class="ghost">Close</button></div></div><p id="dlp-progress" role="status"></p><section class="hero"><div><p class="eyebrow" id="dlp-kicker"></p><p class="hero-count" id="dlp-count"></p><h2 id="dlp-hero-title"></h2><p id="dlp-brief"></p><div id="dlp-next"></div></div><aside id="dlp-side"></aside></section><div id="dlp-cards"></div><details open><summary><span id="dlp-label-modules"></span> <span class="pill" id="dlp-module-count">0</span></summary><div class="body" id="dlp-modules"></div></details><details open><summary><span id="dlp-label-work"></span> <span class="pill" id="dlp-work-count">0</span></summary><div class="body"><p><input id="dlp-search"><select id="dlp-status"></select><select id="dlp-module"></select><select id="dlp-group"></select><button type="button" id="dlp-export" class="ghost"></button></p><p id="dlp-coverage" class="fine"></p><table><thead><tr><th id="dlp-th-student"></th><th id="dlp-th-group"></th><th id="dlp-th-module"></th><th id="dlp-th-assignment"></th><th id="dlp-th-status"></th><th id="dlp-th-action"></th></tr></thead><tbody id="dlp-rows"></tbody></table></div></details><details><summary><span id="dlp-label-groups"></span> <span class="pill" id="dlp-group-count">0</span></summary><div class="body"><table><thead><tr><th id="dlp-th-group2"></th><th id="dlp-th-rows"></th><th id="dlp-th-feedback"></th><th id="dlp-th-missing"></th><th id="dlp-th-caught"></th><th id="dlp-th-behind"></th></tr></thead><tbody id="dlp-groups"></tbody></table></div></details><details open><summary><span id="dlp-label-students"></span> <span class="pill" id="dlp-student-count">0</span></summary><div class="body"><p><input id="dlp-student-search"><button type="button" id="dlp-export-student" class="ghost" disabled></button></p><div id="dlp-student-detail"></div><table><thead><tr><th id="dlp-th-student2"></th><th id="dlp-th-group3"></th><th id="dlp-th-feedback2"></th><th id="dlp-th-missing2"></th><th id="dlp-th-total"></th></tr></thead><tbody id="dlp-students"></tbody></table></div></details><details><summary><span id="dlp-label-reminder"></span></summary><div class="body"><p class="fine" id="dlp-reminder-note"></p><p id="dlp-days"><label><input type="checkbox" data-day="0" checked> <span id="dlp-day-0"></span></label> <label><input type="checkbox" data-day="1" checked> <span id="dlp-day-1"></span></label> <label><input type="checkbox" data-day="2" checked> <span id="dlp-day-2"></span></label> <label><input type="checkbox" data-day="3" checked> <span id="dlp-day-3"></span></label> <label><input type="checkbox" data-day="4" checked> <span id="dlp-day-4"></span></label> <label><input type="checkbox" data-day="5" checked> <span id="dlp-day-5"></span></label> <label><input type="checkbox" data-day="6" checked> <span id="dlp-day-6"></span></label></p><p><span id="dlp-time-label"></span> <input id="dlp-hour" type="number" min="0" max="23" value="10"> <span id="dlp-hour-label"></span> <input id="dlp-minute" type="number" min="0" max="59" value="0"> <span id="dlp-minute-label"></span> <button type="button" id="dlp-ics" class="ghost"></button></p></div></details><details><summary><span id="dlp-label-notes"></span> <span class="pill" id="dlp-warn-count">0</span></summary><div class="body"><pre id="dlp-warnings"></pre><p class="fine" id="dlp-fine"></p><p><button type="button" id="dlp-export-json" class="ghost"></button> <button type="button" id="dlp-import-json" class="ghost"></button><input id="dlp-import-file" type="file" accept="application/json,.json" hidden></p></div></details>');
-  document.documentElement.appendChild(panel);
+  panel.insertAdjacentHTML('beforeend', '<div class="top"><div><h1>DBI Leader Dashboard</h1><p id="dlp-subtitle"></p><p class="lede" id="dlp-lede"></p></div><div class="lang"><div class="langpick"><button type="button" id="dlp-lang" class="ghost" aria-haspopup="dialog" aria-expanded="false" aria-controls="dlp-lang-panel">English</button><div id="dlp-lang-panel" class="langpanel" hidden role="dialog" aria-label="Language"><input id="dlp-lang-search" type="search" autocomplete="off"><div id="dlp-lang-list"></div></div></div><button type="button" id="dlp-scan"></button><button type="button" id="dlp-cancel" class="ghost" disabled></button><button type="button" id="dlp-clear" class="ghost"></button><button type="button" id="dlp-close" class="ghost">Close</button></div></div><p id="dlp-progress" role="status"></p><section class="hero"><div><p class="eyebrow" id="dlp-kicker"></p><p class="hero-count" id="dlp-count"></p><h2 id="dlp-hero-title"></h2><p id="dlp-brief"></p><div id="dlp-next"></div></div><aside id="dlp-side"></aside></section><div id="dlp-cards"></div><details open><summary><span id="dlp-label-modules"></span> <span class="pill" id="dlp-module-count">0</span></summary><div class="body" id="dlp-modules"></div></details><details open><summary><span id="dlp-label-work"></span> <span class="pill" id="dlp-work-count">0</span></summary><div class="body"><p><input id="dlp-search"><select id="dlp-status"></select><select id="dlp-module"></select><select id="dlp-group"></select><button type="button" id="dlp-export" class="ghost"></button></p><p id="dlp-coverage" class="fine"></p><table><thead><tr><th id="dlp-th-student"></th><th id="dlp-th-group"></th><th id="dlp-th-module"></th><th id="dlp-th-assignment"></th><th id="dlp-th-status"></th><th id="dlp-th-action"></th></tr></thead><tbody id="dlp-rows"></tbody></table></div></details><details open><summary><span id="dlp-label-groups"></span> <span class="pill" id="dlp-group-count">0</span></summary><div class="body"><p><select id="dlp-group-pick"></select></p><div id="dlp-group-detail"></div><table><thead><tr><th id="dlp-th-group2"></th><th id="dlp-th-rows"></th><th id="dlp-th-feedback"></th><th id="dlp-th-missing"></th><th id="dlp-th-caught"></th><th id="dlp-th-behind"></th></tr></thead><tbody id="dlp-groups"></tbody></table></div></details><details open><summary><span id="dlp-label-students"></span> <span class="pill" id="dlp-student-count">0</span></summary><div class="body"><p><select id="dlp-student-pick"></select><button type="button" id="dlp-export-student" class="ghost" disabled></button></p><div id="dlp-student-detail"></div><table><thead><tr><th id="dlp-th-student2"></th><th id="dlp-th-group3"></th><th id="dlp-th-feedback2"></th><th id="dlp-th-missing2"></th><th id="dlp-th-total"></th></tr></thead><tbody id="dlp-students"></tbody></table></div></details><details><summary><span id="dlp-label-reminder"></span></summary><div class="body"><p class="fine" id="dlp-reminder-note"></p><p id="dlp-days"><label><input type="checkbox" data-day="0" checked> <span id="dlp-day-0"></span></label> <label><input type="checkbox" data-day="1" checked> <span id="dlp-day-1"></span></label> <label><input type="checkbox" data-day="2" checked> <span id="dlp-day-2"></span></label> <label><input type="checkbox" data-day="3" checked> <span id="dlp-day-3"></span></label> <label><input type="checkbox" data-day="4" checked> <span id="dlp-day-4"></span></label> <label><input type="checkbox" data-day="5" checked> <span id="dlp-day-5"></span></label> <label><input type="checkbox" data-day="6" checked> <span id="dlp-day-6"></span></label></p><p><span id="dlp-time-label"></span> <input id="dlp-hour" type="number" min="0" max="23" value="10"> <span id="dlp-hour-label"></span> <input id="dlp-minute" type="number" min="0" max="59" value="0"> <span id="dlp-minute-label"></span> <button type="button" id="dlp-ics" class="ghost"></button></p></div></details><details><summary><span id="dlp-label-notes"></span> <span class="pill" id="dlp-warn-count">0</span></summary><div class="body"><pre id="dlp-warnings"></pre><p class="fine" id="dlp-fine"></p><p><button type="button" id="dlp-export-json" class="ghost"></button> <button type="button" id="dlp-import-json" class="ghost"></button><input id="dlp-import-file" type="file" accept="application/json,.json" hidden></p></div></details>');
+  slot.ui.body.appendChild(panel);
 
-  function byId(id) { return document.getElementById(id); }
   function setText(id, value) { var node = byId(id); if (node) node.textContent = value; }
   function option(select, value, label) {
-    var node = document.createElement('option');
+    var node = slot.ui.createElement('option');
     node.value = value;
     node.textContent = label;
     select.appendChild(node);
@@ -1038,7 +1360,7 @@
       if (!byPerson.has(id)) byPerson.set(id, { student: x.student, group: x.group, n: 0, first: x });
       byPerson.get(id).n++;
     });
-    var people = [].slice.call(byPerson.values()).sort(function (a, b) { return b.n - a.n || a.student.localeCompare(b.student); });
+    var people = Array.from(byPerson.values()).sort(function (a, b) { return b.n - a.n || a.student.localeCompare(b.student); });
     var side = [];
     if (latest) {
       side.push({ value: String(missing.length), label: t('sideMissing') });
@@ -1064,7 +1386,7 @@
     if (missing.length && feedback.length) {
       var byGroup = new Map();
       missing.forEach(function (x) { var name = namedGroup(x.group); byGroup.set(name, (byGroup.get(name) || 0) + 1); });
-      var top = [].slice.call(byGroup.entries()).sort(function (a, b) { return b[1] - a[1]; })[0];
+      var top = Array.from(byGroup.entries()).sort(function (a, b) { return b[1] - a[1]; })[0];
       body += ' ' + (top[0] ? fill('missingGroup', { group: top[0], n: top[1] }) : fill('missingNoGroup', { n: top[1] }));
     }
     if (latest && !latest.complete) body = t('partial') + body;
@@ -1074,21 +1396,22 @@
     if (busy || slot.running) return;
     busy = true;
     render();
-    panel.classList.add('tucked');
+    try { window.focus(); } catch (error) {}
     openReview(x).then(function (response) {
       busy = false;
       if (response.ok) openedKeys.add(itemKey(x));
-      else {
-        panel.classList.remove('tucked');
-        byId('dlp-progress').textContent = response.message;
-      }
+      else byId('dlp-progress').textContent = response.message;
       render();
     });
   }
   function render() {
-    pack = lang === 'ro' ? RO : STR;
-    byId('dlp-en').classList.toggle('on', lang === 'en');
-    byId('dlp-ro').classList.toggle('on', lang === 'ro');
+    if (lang === 'en') pack = STR;
+    else if (lang === 'ro') pack = RO;
+    paintLangButton();
+    var langSearch = byId('dlp-lang-search');
+    if (langSearch) langSearch.placeholder = t('langSearch');
+    var langPanel = byId('dlp-lang-panel');
+    if (langPanel) langPanel.setAttribute('aria-label', t('langLabel'));
     setText('dlp-subtitle', t('subtitle'));
     setText('dlp-lede', t('lede'));
     setText('dlp-scan', t('scan'));
@@ -1128,7 +1451,6 @@
     setText('dlp-th-missing2', t('statusMissing'));
     setText('dlp-th-total', t('thTotal'));
     byId('dlp-search').placeholder = t('search');
-    byId('dlp-student-search').placeholder = t('studentSearch');
     setText('dlp-export', t('export'));
     setText('dlp-export-student', t('exportStudent'));
     byId('dlp-scan').disabled = slot.running;
@@ -1160,14 +1482,14 @@
     var body = byId('dlp-rows');
     body.replaceChildren();
     view.forEach(function (x) {
-      var tr = document.createElement('tr');
+      var tr = slot.ui.createElement('tr');
       [x.student, groupLabel(x.group), moduleLabel(x.module), lessonLabel(x.module, x.title), statusLabel(x.status)].forEach(function (value) {
-        var td = document.createElement('td');
+        var td = slot.ui.createElement('td');
         td.textContent = value;
         tr.appendChild(td);
       });
-      var td = document.createElement('td');
-      var button = document.createElement('button');
+      var td = slot.ui.createElement('td');
+      var button = slot.ui.createElement('button');
       var canReview = x.status === 'Needs feedback';
       button.textContent = x.status === 'Reviewed' ? t('statusReviewed') : (!canReview ? t('notSubmittedBtn') : (openedKeys.has(itemKey(x)) ? t('opened') : t('openReview')));
       button.disabled = busy || slot.running || !canReview;
@@ -1186,26 +1508,26 @@
     var side = byId('dlp-side');
     side.replaceChildren();
     brief.side.forEach(function (bit) {
-      var p = document.createElement('p');
-      var strong = document.createElement('strong');
+      var p = slot.ui.createElement('p');
+      var strong = slot.ui.createElement('strong');
       strong.textContent = bit.value;
       p.appendChild(strong);
-      p.appendChild(document.createTextNode(' ' + bit.label));
+      p.appendChild(slot.ui.createTextNode(' ' + bit.label));
       side.appendChild(p);
     });
     var nextBox = byId('dlp-next');
     nextBox.replaceChildren();
     brief.next.forEach(function (x) {
-      var row = document.createElement('div');
+      var row = slot.ui.createElement('div');
       row.className = 'next-card';
-      var copy = document.createElement('div');
-      var who = document.createElement('strong');
+      var copy = slot.ui.createElement('div');
+      var who = slot.ui.createElement('strong');
       who.textContent = x.student;
-      var meta = document.createElement('div');
+      var meta = slot.ui.createElement('div');
       meta.textContent = moduleLabel(x.module) + ' · ' + lessonLabel(x.module, x.title) + (namedGroup(x.group) ? ' · ' + namedGroup(x.group) : '');
       copy.appendChild(who);
       copy.appendChild(meta);
-      var button = document.createElement('button');
+      var button = slot.ui.createElement('button');
       button.textContent = openedKeys.has(itemKey(x)) ? t('opened') : t('reviewNow');
       button.disabled = busy || slot.running;
       button.onclick = function () { openItem(x); };
@@ -1221,10 +1543,10 @@
     var cardHost = byId('dlp-cards');
     cardHost.replaceChildren();
     [[t('cardFeedback'), feedback.length, t('cardFeedbackNote')], [t('cardMissing'), missing.length, t('cardMissingNote')], [t('cardGroups'), new Set(shown.map(function (x) { return x.group; })).size, ''], [t('cardCaught'), roster.length ? caught : '—', roster.length ? fill('cardCaughtNote', { n: roster.length }) : t('cardCaughtEmpty')]].forEach(function (card) {
-      var article = document.createElement('article');
-      var strong = document.createElement('strong');
+      var article = slot.ui.createElement('article');
+      var strong = slot.ui.createElement('strong');
       strong.textContent = String(card[1]);
-      var span = document.createElement('span');
+      var span = slot.ui.createElement('span');
       span.textContent = card[2] ? card[0] + ' · ' + card[2] : card[0];
       article.appendChild(strong);
       article.appendChild(span);
@@ -1238,20 +1560,20 @@
     modules.forEach(function (name) {
       var feedbackCount = shown.filter(function (x) { return canonicalModule(x.module) === name && x.status === 'Needs feedback'; }).length;
       var missingCount = shown.filter(function (x) { return canonicalModule(x.module) === name && x.status === 'Missing - not submitted'; }).length;
-      var row = document.createElement('div');
-      var label = document.createElement('b');
+      var row = slot.ui.createElement('div');
+      var label = slot.ui.createElement('b');
       label.textContent = moduleLabel(name);
-      var bar = document.createElement('div');
+      var bar = slot.ui.createElement('div');
       bar.className = 'bar';
-      var you = document.createElement('i');
+      var you = slot.ui.createElement('i');
       you.className = 'you';
       you.style.width = ((feedbackCount / max) * 100) + '%';
-      var them = document.createElement('i');
+      var them = slot.ui.createElement('i');
       them.className = 'them';
       them.style.width = ((missingCount / max) * 100) + '%';
       bar.appendChild(you);
       bar.appendChild(them);
-      var note = document.createElement('div');
+      var note = slot.ui.createElement('div');
       note.textContent = fill('moduleNote', { feedback: feedbackCount, missing: missingCount });
       row.appendChild(label);
       row.appendChild(bar);
@@ -1261,65 +1583,61 @@
     setText('dlp-module-count', String(modules.length));
 
     var people = rosterPeople();
-    var qStudent = byId('dlp-student-search').value.trim().toLowerCase();
-    var studentRows = people.filter(function (s) { return (!groupFocus || s.group === groupFocus) && (!qStudent || s.student.toLowerCase().indexOf(qStudent) !== -1); }).sort(function (a, b) { return (b.feedback - a.feedback) || (b.missing - a.missing) || a.student.localeCompare(b.student); });
+    var studentRows = people.filter(function (s) { return !groupFocus || s.group === groupFocus; }).sort(function (a, b) { return (b.feedback - a.feedback) || (b.missing - a.missing) || a.student.localeCompare(b.student); });
+    var studentPick = byId('dlp-student-pick');
+    var studentValue = studentPick.value;
+    studentPick.replaceChildren();
+    option(studentPick, '', people.length ? t('chooseStudent') : t('studentsWaiting'));
+    studentRows.forEach(function (s) {
+      option(studentPick, personKey(s), s.student + (namedGroup(s.group) ? ' · ' + namedGroup(s.group) : ''));
+    });
+    if ([].some.call(studentPick.options, function (node) { return node.value === studentValue; })) studentPick.value = studentValue;
     var studentBody = byId('dlp-students');
     studentBody.replaceChildren();
     studentRows.forEach(function (s) {
-      var tr = document.createElement('tr');
+      var tr = slot.ui.createElement('tr');
       [s.student, groupLabel(s.group), s.feedback, s.missing, s.feedback + s.missing].forEach(function (value) {
-        var td = document.createElement('td');
+        var td = slot.ui.createElement('td');
         td.textContent = value;
         tr.appendChild(td);
       });
       tr.style.cursor = 'pointer';
-      tr.onclick = function () { byId('dlp-student-search').value = s.student; render(); };
+      tr.onclick = function () { byId('dlp-student-pick').value = personKey(s); render(); };
       studentBody.appendChild(tr);
     });
     setText('dlp-student-count', String(studentRows.length));
     var detail = byId('dlp-student-detail');
     detail.replaceChildren();
-    if (!qStudent) {
-      var pick = document.createElement('p');
+    var chosen = studentRows.filter(function (s) { return personKey(s) === studentPick.value; });
+    if (!studentPick.value) {
+      var pick = slot.ui.createElement('p');
       pick.className = 'fine';
-      pick.textContent = t('studentPick');
+      pick.textContent = people.length ? t('studentPick') : t('studentsWaiting');
       detail.appendChild(pick);
+    } else if (!chosen.length) {
+      var none = slot.ui.createElement('p');
+      none.textContent = t('studentNone');
+      detail.appendChild(none);
     } else {
-      var matches = people.filter(function (s) { return (!groupFocus || s.group === groupFocus) && s.student.toLowerCase().indexOf(qStudent) !== -1; });
-      var chosen = chosenStudents(people, qStudent);
-      if (!matches.length) {
-        var none = document.createElement('p');
-        none.textContent = t('studentNone');
-        detail.appendChild(none);
-      } else if (!chosen.length) {
-        matches.forEach(function (s) {
-          var button = document.createElement('button');
-          button.type = 'button';
-          button.className = 'ghost';
-          button.textContent = s.student + (namedGroup(s.group) ? ' · ' + namedGroup(s.group) : '');
-          button.onclick = function () { byId('dlp-student-search').value = s.student; render(); };
-          detail.appendChild(button);
-        });
-      } else {
         chosen.forEach(function (person) {
-          var head = document.createElement('h3');
+          var head = slot.ui.createElement('h3');
           head.textContent = person.student + (namedGroup(person.group) ? ' · ' + namedGroup(person.group) : '');
-          var stats = document.createElement('p');
+          var stats = slot.ui.createElement('p');
           stats.textContent = t('studentSubmitted') + ': ' + (person.reviewed + person.feedback) + ' · ' + t('studentLeft') + ': ' + person.missing + ' · ' + t('studentWaiting') + ': ' + person.feedback;
-          var note = document.createElement('p');
+          var note = slot.ui.createElement('p');
           note.className = 'fine';
           note.textContent = t('lessonNamesNote');
           detail.appendChild(head);
           detail.appendChild(stats);
           if (lang !== 'en') detail.appendChild(note);
           person.modules.slice().sort(function (a, b) { return modules.indexOf(canonicalModule(a.module)) - modules.indexOf(canonicalModule(b.module)); }).forEach(function (mod) {
-            var block = document.createElement('div');
-            var title = document.createElement('b');
+            var block = slot.ui.createElement('div');
+            var title = slot.ui.createElement('b');
             title.textContent = moduleLabel(mod.module);
             block.appendChild(title);
             var lessons = moduleLessons(mod);
             if (!lessons.missing.length && !(mod.feedback || 0)) {
-              var caughtLine = document.createElement('p');
+              var caughtLine = slot.ui.createElement('p');
               caughtLine.textContent = t('moduleCaught');
               block.appendChild(caughtLine);
             } else {
@@ -1327,27 +1645,26 @@
               var left = lessons.missing.map(function (name) { return lessonLabel(mod.module, name); });
               [t('studentDone') + ' (' + done.length + ')', t('studentNotYet') + ' (' + left.length + ')'].forEach(function (heading, index) {
                 var names = index === 0 ? done : left;
-                var label = document.createElement('div');
+                var label = slot.ui.createElement('div');
                 label.textContent = heading;
-                var ul = document.createElement('ul');
+                var ul = slot.ui.createElement('ul');
                 (names.length ? names : ['—']).forEach(function (name) {
-                  var li = document.createElement('li');
+                  var li = slot.ui.createElement('li');
                   li.textContent = name;
                   ul.appendChild(li);
                 });
                 block.appendChild(label);
                 block.appendChild(ul);
               });
-              var nextLesson = document.createElement('p');
+              var nextLesson = slot.ui.createElement('p');
               nextLesson.textContent = t('studentNext') + ': ' + (left[0] || '—');
               block.appendChild(nextLesson);
             }
             detail.appendChild(block);
           });
         });
-      }
     }
-    byId('dlp-export-student').disabled = !chosenStudents(people, qStudent).length;
+    byId('dlp-export-student').disabled = !chosen.length;
 
     var groupMap = new Map();
     people.forEach(function (person) {
@@ -1359,19 +1676,39 @@
       if (!person.feedback && !person.missing) g.caught++;
       if (person.missing && (!g.behind || person.missing > g.behind.missing)) g.behind = person;
     });
-    var groupRows = [].slice.call(groupMap.values()).sort(function (a, b) { return (b.feedback - a.feedback) || (b.missing - a.missing) || String(a.group).localeCompare(String(b.group)); });
+    var groupRows = Array.from(groupMap.values()).sort(function (a, b) { return (b.feedback - a.feedback) || (b.missing - a.missing) || String(a.group).localeCompare(String(b.group)); });
+    var groupPick = byId('dlp-group-pick');
+    var groupValue = groupFocus || groupPick.value;
+    groupPick.replaceChildren();
+    option(groupPick, '', groupRows.length ? t('allGroups') : t('groupsWaiting'));
+    groupRows.forEach(function (g) { option(groupPick, g.group, groupLabel(g.group) + ' (' + g.students + ')'); });
+    if ([].some.call(groupPick.options, function (node) { return node.value === groupValue; })) groupPick.value = groupValue;
+    groupFocus = groupPick.value;
+    var groupDetail = byId('dlp-group-detail');
+    groupDetail.replaceChildren();
+    if (!groupRows.length) {
+      var waiting = slot.ui.createElement('p');
+      waiting.className = 'fine';
+      waiting.textContent = t('groupsWaiting');
+      groupDetail.appendChild(waiting);
+    } else if (groupFocus) {
+      var focused = groupRows.filter(function (g) { return g.group === groupFocus; })[0];
+      var line = slot.ui.createElement('p');
+      line.textContent = focused ? groupLabel(focused.group) + ' · ' + focused.students + ' · ' + t('statusFeedback') + ' ' + focused.feedback + ' · ' + t('statusMissing') + ' ' + focused.missing : '';
+      groupDetail.appendChild(line);
+    }
     var groupBody = byId('dlp-groups');
     groupBody.replaceChildren();
     groupRows.forEach(function (g) {
-      var tr = document.createElement('tr');
+      var tr = slot.ui.createElement('tr');
       var behind = g.behind ? g.behind.student + ' (' + g.behind.missing + ')' : '—';
       [groupLabel(g.group), g.students, g.feedback, g.missing, g.caught, behind].forEach(function (value) {
-        var td = document.createElement('td');
+        var td = slot.ui.createElement('td');
         td.textContent = value;
         tr.appendChild(td);
       });
       tr.style.cursor = 'pointer';
-      tr.onclick = function () { groupFocus = groupFocus === g.group ? '' : g.group; render(); };
+      tr.onclick = function () { groupFocus = groupFocus === g.group ? '' : g.group; byId('dlp-group-pick').value = groupFocus; render(); };
       groupBody.appendChild(tr);
     });
     setText('dlp-group-count', String(groupRows.length));
@@ -1391,13 +1728,24 @@
     }
   }
 
-  byId('dlp-en').onclick = function () { lang = 'en'; saveLocal(); render(); };
-  byId('dlp-ro').onclick = function () { lang = 'ro'; saveLocal(); render(); };
+  byId('dlp-lang').onclick = function () {
+    var langPanel = byId('dlp-lang-panel');
+    if (langPanel.hidden) {
+      langPanel.hidden = false;
+      byId('dlp-lang').setAttribute('aria-expanded', 'true');
+      paintLangPanel();
+      if (byId('dlp-lang-search').focus) byId('dlp-lang-search').focus();
+    } else closeLangPanel();
+  };
+  byId('dlp-lang-search').oninput = function () { paintLangPanel(); };
+  slot.ui.addEventListener('click', function (event) {
+    var wrap = byId('dlp-lang').parentNode;
+    if (wrap && !wrap.contains(event.target)) closeLangPanel();
+  });
   byId('dlp-cancel').onclick = function () { slot.cancelled = true; };
   byId('dlp-close').onclick = function () {
-    if (panel.classList.contains('tucked')) { panel.classList.remove('tucked'); return; }
     slot.cancelled = true;
-    panel.remove();
+    if (slot.dash && !slot.dash.closed) slot.dash.close();
   };
   byId('dlp-clear').onclick = function () {
     if (slot.running) return;
@@ -1412,16 +1760,25 @@
     setText('dlp-progress', t('cleared'));
   };
   byId('dlp-scan').onclick = function () { if (!slot.running) { slot.running = true; scan(); } };
-  ['dlp-search', 'dlp-status', 'dlp-module', 'dlp-group', 'dlp-student-search'].forEach(function (id) { byId(id).oninput = render; });
+  ['dlp-search', 'dlp-status', 'dlp-module', 'dlp-group'].forEach(function (id) { byId(id).oninput = render; });
+  byId('dlp-student-pick').onchange = render;
+  byId('dlp-group-pick').onchange = function () { groupFocus = byId('dlp-group-pick').value; render(); };
   function saveLocal() {
-    try {
-      var copy = latest ? JSON.parse(JSON.stringify(latest)) : null;
-      if (copy) delete copy.account;
-      localStorage.setItem('dbi-leader-pages-scan', JSON.stringify({ lang: lang, items: items, latest: copy }));
-    } catch (error) {}
+    var data = readStore();
+    var copy = latest ? JSON.parse(JSON.stringify(latest)) : null;
+    if (copy) delete copy.account;
+    data.lang = lang;
+    data.langFavorites = favorites.slice();
+    data.items = items;
+    data.latest = copy;
+    data.phrasePacks = data.phrasePacks || {};
+    data.i18nPacks = data.i18nPacks || {};
+    if (lang !== 'en') data.phrasePacks[lang] = phraseCache;
+    if (lang !== 'en' && lang !== 'ro' && pack && pack !== STR) data.i18nPacks[lang] = pack;
+    writeStore(data);
   }
   function downloadIcs() {
-    var boxes = [].slice.call(document.querySelectorAll('#dlp-days input'));
+    var boxes = [].slice.call(slot.ui.querySelectorAll('#dlp-days input'));
     var days = boxes.filter(function (el) { return el.checked; }).map(function (el) { return Number(el.getAttribute('data-day')); });
     if (!days.length) days = [0, 1, 2, 3, 4, 5, 6];
     days.sort(function (a, b) { return a - b; });
@@ -1458,7 +1815,7 @@
     ].join('\r\n');
     var blob = new Blob([ics], { type: 'text/calendar' });
     var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
+    var link = slot.ui.createElement('a');
     link.href = url;
     link.download = 'dbi-scan-assignments.ics';
     link.click();
@@ -1466,18 +1823,18 @@
   }
   byId('dlp-export').onclick = function () { downloadCsv(filtered(), 'dbi-leader-report.csv'); };
   byId('dlp-export-student').onclick = function () {
-    var chosen = chosenStudents(rosterPeople(), byId('dlp-student-search').value.trim().toLowerCase());
+    var pickValue = byId('dlp-student-pick').value;
+    var chosen = rosterPeople().filter(function (person) { return personKey(person) === pickValue; });
     if (!chosen.length) return;
     var name = String(chosen[0].student).replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim() || 'student';
     downloadCsv(chosen.reduce(function (all, person) { return all.concat(studentViewRows(person)); }, []), name + '.csv');
   };
   byId('dlp-ics').onclick = downloadIcs;
   byId('dlp-export-json').onclick = function () {
-    var copy = latest ? JSON.parse(JSON.stringify(latest)) : null;
-    if (copy) delete copy.account;
-    var blob = new Blob([JSON.stringify({ lang: lang, items: items, latest: copy }, null, 2)], { type: 'application/json' });
+    saveLocal();
+    var blob = new Blob([JSON.stringify(readStore(), null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
+    var link = slot.ui.createElement('a');
     link.href = url;
     link.download = 'dbi-leader-backup.json';
     link.click();
@@ -1492,18 +1849,34 @@
     file.text().then(function (raw) {
       var data;
       try { data = JSON.parse(raw); } catch (error) { setText('dlp-progress', t('importBad')); return; }
-      if (!data || typeof data !== 'object' || !Array.isArray(data.items)) { setText('dlp-progress', t('importBad')); return; }
-      items = data.items;
-      latest = data.latest && typeof data.latest === 'object' ? data.latest : null;
+      var scanData = data.lastScan && typeof data.lastScan === 'object' ? data.lastScan : data;
+      if (!data || typeof data !== 'object' || !Array.isArray(scanData.items)) { setText('dlp-progress', t('importBad')); return; }
+      items = scanData.items;
+      latest = scanData.latest && typeof scanData.latest === 'object' ? scanData.latest : null;
       if (latest) delete latest.account;
-      if (data.lang === 'ro' || data.lang === 'en') lang = data.lang;
+      if (data.lang && LANG_BY[data.lang]) lang = data.lang;
+      if (Array.isArray(data.langFavorites)) favorites = data.langFavorites.filter(function (code) { return LANG_BY[code]; });
+      var box = readStore();
+      if (data.phrasePacks && typeof data.phrasePacks === 'object') box.phrasePacks = data.phrasePacks;
+      if (data.i18nPacks && typeof data.i18nPacks === 'object') box.i18nPacks = data.i18nPacks;
+      writeStore(box);
+      if (lang === 'en') { pack = STR; phraseCache = {}; }
+      else if (lang === 'ro') pack = RO;
+      else if (box.i18nPacks && box.i18nPacks[lang]) pack = box.i18nPacks[lang];
+      phraseCache = {};
+      var phrases = box.phrasePacks && box.phrasePacks[lang];
+      if (phrases) Object.keys(phrases).forEach(function (key) { phraseCache[key] = phrases[key]; });
       saveLocal();
       render();
+      if (lang !== 'en' && lang !== 'ro' && pack === STR) setLanguage(lang);
       setText('dlp-progress', t('importDone'));
     }).catch(function () { setText('dlp-progress', t('importBad')); });
   };
+  loadStore();
+  if (slot.ui) slot.ui.documentElement.dir = RTL[lang] ? 'rtl' : 'ltr';
   render();
-  setText('dlp-progress', t('scanningNotes'));
+  setText('dlp-progress', latest ? '' : t('scanningNotes'));
+  if (lang !== 'en' && lang !== 'ro' && pack === STR) setLanguage(lang);
   scan().catch(function (error) {
     slot.running = false;
     busy = false;

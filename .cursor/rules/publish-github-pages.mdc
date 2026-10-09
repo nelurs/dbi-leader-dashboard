@@ -1,0 +1,8 @@
+---
+description: Publish DBI Leader Dashboard edits to GitHub Pages
+alwaysApply: true
+---
+
+After changing this DBI Leader Dashboard repo, commit and push to the branch GitHub Pages publishes (origin main) so https://nelurs.github.io/dbi-leader-dashboard/ updates. Do not leave dashboard edits only on disk.
+
+Do this only when the user asked for the change, or when they asked for the public page to stay current. Never force-push. Never update git config. Never commit secrets.
